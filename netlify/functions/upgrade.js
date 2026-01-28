@@ -15,27 +15,25 @@ export default async (req, context) => {
       systemPrompt = "You are a dictionary. Return ONLY a JSON object with: 'definition' (max 15 words) and 'nuance' (max 10 words, explaining connotation).";
       userMessage = `Define the word "${text}" inside this context: "${context}".`;
     } 
-    // --- TASK 2: UPGRADE (INCREMENTAL LADDER LOGIC) ---
+    // --- TASK 2: UPGRADE (DIRECTIONAL LADDER LOGIC) ---
     else {
-      // KEY CHANGE: We instruct the System to be an "Incremental Engine"
-      systemPrompt = "You are a Nuance Engine. You modify text in small, incremental steps. Avoid archaic language, 'purple prose', or over-the-top exaggerations. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
+      systemPrompt = "You are a Philology Engine. Your goal is to move text along a specific vector (Formality, Complexity, Emotion). You must avoid loops. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
       
       const prompts = {
-        'sophisticate': "Rewrite this to be slightly more formal and precise. Do not make it overly poetic or archaic. Just take it one step up the academic ladder.",
+        'sophisticate': "VECTOR: INCREASE FORMALITY. Analyze the current register. The output must be strictly MORE formal/academic than the input. Do not swap for a synonym of equal weight (e.g., do not swap 'glad' for 'happy'). You must climb the ladder one distinct step.",
         
-        'simplify': "Rewrite this to be slightly more casual and direct. Do not make it childish. Just strip away one layer of complexity.",
+        'simplify': "VECTOR: DECREASE COMPLEXITY. Analyze the current register. The output must be strictly SIMPLER/PLAINER than the input. Strip away adornment. Use Anglo-Saxon roots over Latin ones.",
         
-        'emotional': "Rewrite this to add a specific sensory detail or a slight emotional color. Do not turn it into a melodrama. Just make it feel more human.",
+        'emotional': "VECTOR: INCREASE INTENSITY. Analyze the current emotional weight. The output must evoke a STRONGER sensory or emotional response. Move from 'telling' to 'showing'.",
         
-        'action': "Rewrite this to make the verb slightly stronger. Change passive voice to active if present. Increase the momentum just a bit.",
+        'action': "VECTOR: INCREASE MOMENTUM. Make the verbs stronger and the sentence structure more propulsive.",
         
         'custom': customPrompt || "Rewrite this."
       };
 
-      // KEY CHANGE: We explicitly tell the AI to compare against the input
       userMessage = `Current Text: "${text}". 
       Instruction: ${prompts[mode]}. 
-      Constraint: The change must be noticeable but natural. Do not change the meaning, only the register.`;
+      Constraint: The change must be noticeable and directional. If the mode is 'sophisticate', the result MUST be more complex than the input. Do not loop.`;
     }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -47,12 +45,13 @@ export default async (req, context) => {
         "X-Title": "Gridscape"
       },
       body: JSON.stringify({
-        "model": "openai/gpt-4o-mini", // GPT-4o-mini is great at following "nuance" instructions
+        "model": "openai/gpt-4o-mini",
         "messages": [
           { "role": "system", "content": systemPrompt },
           { "role": "user", "content": userMessage }
         ],
-        "temperature": 0.7, // Slightly lower temperature keeps it grounded
+        // Increased from 0.7 to 0.85 to break deterministic loops
+        "temperature": 0.85, 
         "response_format": { "type": "json_object" }
       })
     });
