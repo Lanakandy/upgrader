@@ -323,15 +323,7 @@ function GridCanvas() {
     <div className="w-screen h-screen font-serif text-ink relative">
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          {/* Logo + Title Wrapper */}
-          <div className="flex items-center gap-3 pointer-events-auto">
-            <img 
-              src="/logo.png" 
-              alt="Gridscape Logo" 
-              className="h-10 w-auto object-contain" 
-            />
-            <h1 className="text-4xl font-serif tracking-tight">Upgrader</h1>
-          </div>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
