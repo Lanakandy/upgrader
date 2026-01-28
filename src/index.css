@@ -1,0 +1,18 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #F9F6C8;
+  color: #1a1a1a;
+  overflow: hidden; /* Canvas handles scrolling */
+}
+
+/* Custom Dot Grid Pattern */
+.grid-pattern {
+  background-image: radial-gradient(#d1cfaa 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
