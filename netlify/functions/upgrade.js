@@ -1,29 +1,34 @@
 export default async (req, context) => {
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
-  // Get the secret key from Netlify Environment Variables
   const API_KEY = process.env.OPENROUTER_API_KEY;
-
-  if (!API_KEY) {
-    return new Response(JSON.stringify({ error: "Server API Key missing" }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" } 
-    });
-  }
+  if (!API_KEY) return new Response(JSON.stringify({ error: "Server API Key missing" }), { status: 500 });
 
   try {
-    const { text, mode, context } = await req.json();
+    const { text, mode, customPrompt, task } = await req.json();
 
-    // Define the prompt logic securely on the server
-    const prompts = {
-      'sophisticate': "Rewrite this to be more sophisticated, academic, and precise.",
-      'simplify': "Rewrite this to be punchier, simpler, and more direct.",
-      'emotional': "Rewrite this to focus on the sensory details and emotional weight.",
-      'action': "Rewrite this to make the verbs more active and the pacing faster.",
-    };
+    let systemPrompt = "";
+    let userMessage = "";
+
+    // --- TASK 1: LEXICAL X-RAY (DEFINITION) ---
+    if (task === 'define') {
+      systemPrompt = "You are a dictionary. Return ONLY a JSON object with: 'definition' (max 15 words) and 'nuance' (max 10 words, explaining connotation).";
+      userMessage = `Define the word "${text}" inside this context: "${context}".`;
+    } 
+    // --- TASK 2: UPGRADE (STANDARD & CUSTOM) ---
+    else {
+      systemPrompt = "You are a philologist. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
+      
+      const prompts = {
+        'sophisticate': "Rewrite to be more sophisticated, academic, and precise.",
+        'simplify': "Rewrite to be punchier, simpler, and more direct.",
+        'emotional': "Rewrite to focus on sensory details and emotional weight.",
+        'action': "Rewrite to make verbs active and pacing faster.",
+        'custom': customPrompt || "Rewrite this." // Use user input
+      };
+
+      userMessage = `${prompts[mode]}. Text: "${text}".`;
+    }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -36,31 +41,17 @@ export default async (req, context) => {
       body: JSON.stringify({
         "model": "openai/gpt-4o-mini",
         "messages": [
-          {
-            "role": "system",
-            "content": "You are a philologist and editor. Return ONLY a JSON object with two fields: 'text' (the upgraded sentence) and 'reason' (a very brief, max 10-word academic explanation of WHY this change improves the nuance)."
-          },
-          {
-            "role": "user",
-            "content": `${prompts[mode]}. Text: "${text}". Context from previous node: "${context || 'None'}"`
-          }
+          { "role": "system", "content": systemPrompt },
+          { "role": "user", "content": userMessage }
         ],
         "response_format": { "type": "json_object" }
       })
     });
 
     const data = await response.json();
-    
-    // Pass the OpenRouter response back to your frontend
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(JSON.stringify(data), { status: 200 });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 };

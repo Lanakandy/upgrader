@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
   useNodesState,
@@ -10,76 +10,172 @@ import {
   MarkerType,
   ReactFlowProvider,
   useReactFlow,
+  getRectOfNodes,
+  getTransformForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { diffWords } from 'diff'; // We use this for the Diff feature
 
 // --- 1. API SERVICE ---
-const upgradeText = async (text, mode, context) => {
+const apiCall = async (payload) => {
   try {
     const response = await fetch("/.netlify/functions/upgrade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, mode, context })
+      body: JSON.stringify(payload)
     });
-
     if (!response.ok) throw new Error("Netlify Function failed");
-
     const data = await response.json();
     return JSON.parse(data.choices[0].message.content);
   } catch (error) {
     console.error(error);
-    return { text: "Connection error.", reason: "Try again later." };
+    return null;
   }
 };
 
-// --- 2. CUSTOM NODE COMPONENT (Updated with Multiple Handles) ---
+// --- 2. COMPLEX COMPONENT: PAPER NODE ---
 const PaperNode = ({ data, id }) => {
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [definition, setDefinition] = useState(null); // { word, text, nuance, x, y }
 
-  const handleUpgrade = async (mode) => {
+  // A. UPGRADE HANDLER
+  const handleUpgrade = async (mode, customText = null) => {
     setLoading(true);
-    await data.onUpgrade(id, data.text, data.reason, mode);
+    // If custom, pass the specific prompt
+    await data.onUpgrade(id, data.text, data.reason, mode, customText);
     setLoading(false);
+    setShowCustom(false);
+  };
+
+  // B. COPY HANDLER
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(data.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // C. X-RAY HANDLER (Get Definition)
+  const handleWordClick = async (e, word) => {
+    e.stopPropagation();
+    // Reset previous definition
+    setDefinition({ word, text: "Analyzing...", nuance: "...", x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+    
+    const result = await apiCall({ text: word, context: data.text, task: 'define' });
+    
+    if (result) {
+      setDefinition(prev => ({ ...prev, text: result.definition, nuance: result.nuance }));
+    }
+  };
+
+  // D. DIFF RENDERING LOGIC
+  const renderTextWithDiff = () => {
+    if (!data.previousText) {
+      // If first node, just render words clickable
+      return data.text.split(' ').map((word, i) => (
+        <span 
+          key={i} 
+          onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))}
+          className="cursor-pointer hover:bg-yellow-200 hover:text-black rounded px-0.5 transition-colors"
+        >
+          {word}{' '}
+        </span>
+      ));
+    }
+
+    // Compare with previous text to highlight changes
+    const diff = diffWords(data.previousText, data.text);
+    return diff.map((part, i) => {
+      if (part.removed) return null; // Don't show removed words
+      
+      const style = part.added 
+        ? "bg-green-100 text-green-900 font-semibold border-b-2 border-green-300" // Highlight New
+        : "text-ink"; // Normal
+      
+      return (
+        <span key={i} className={style}>
+          {part.value.split(' ').map((word, w) => (
+             <span 
+               key={w} 
+               onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))}
+               className="cursor-pointer hover:bg-yellow-200 rounded px-0.5 transition-colors"
+             >
+              {word}{' '}
+             </span>
+          ))}
+        </span>
+      );
+    });
   };
 
   return (
-    <div className="relative group w-[350px]">
+    <div className="relative group w-[380px]">
       <div className="absolute top-2 left-2 w-full h-full bg-white border border-ink z-0"></div>
       <div className="absolute top-1 left-1 w-full h-full bg-white border border-ink z-10"></div>
       <div className="relative bg-white border border-ink p-6 z-20 transition-all font-serif">
         
-        {/* --- HANDLES (Connectors) --- */}
-        {/* We stack Source and Target handles on top of each other to keep it clean */}
+        {/* Handles */}
+        <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+
+        {/* Copy Button */}
+        <button onClick={handleCopy} className="absolute top-2 right-2 p-1 text-gray-300 hover:text-ink transition-colors">
+          {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+        </button>
+
+        {/* X-Ray Definition Popover */}
+        {definition && (
+          <div className="absolute z-50 bg-ink text-white p-3 text-xs w-64 shadow-xl -top-24 left-1/2 -translate-x-1/2 pointer-events-none">
+            <div className="font-bold text-yellow-200 mb-1 border-b border-gray-600 pb-1">{definition.word}</div>
+            <div className="mb-2 leading-tight">{definition.text}</div>
+            <div className="italic text-gray-400">"{definition.nuance}"</div>
+          </div>
+        )}
+        {/* Click-away listener to close definition (simplified overlay) */}
+        {definition && <div className="fixed inset-0 z-40" onClick={() => setDefinition(null)}></div>}
+
+        {/* Content with Diff Highlighting */}
+        <div className="mb-4 text-lg leading-relaxed text-ink pr-4">
+          {renderTextWithDiff()}
+        </div>
         
-        {/* TOP: Input from Above / Output to Above */}
-        <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-2 !h-2" />
-        <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-2 !h-2" />
-
-        {/* BOTTOM: Output to Below / Input from Below */}
-        <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-2 !h-2" />
-        <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-2 !h-2" />
-
-        {/* RIGHT: Output to Right */}
-        <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2" />
-
-        {/* LEFT: Input from Left */}
-        <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2" />
-
-        {/* --- CONTENT --- */}
-        <div className="mb-4 text-lg leading-relaxed text-ink">{data.text}</div>
-        
-        <div className="border-t border-dotted border-ink pt-3 flex gap-2 flex-wrap">
+        {/* Controls */}
+        <div className="border-t border-dotted border-ink pt-3">
            {loading ? (
-             <div className="flex items-center text-xs font-mono gap-2">
+             <div className="flex items-center text-xs font-mono gap-2 py-1">
                <Loader2 className="animate-spin w-3 h-3" /> PHILOLOGIZING...
              </div>
+           ) : showCustom ? (
+             // CUSTOM INPUT MODE
+             <div className="flex gap-2">
+               <input 
+                 autoFocus
+                 className="flex-1 bg-gray-50 border border-ink px-2 py-1 text-xs font-mono focus:outline-none"
+                 placeholder="e.g. Make it sarcastic..."
+                 value={customPrompt}
+                 onChange={e => setCustomPrompt(e.target.value)}
+                 onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
+               />
+               <button onClick={() => handleUpgrade('custom', customPrompt)} className="px-2 bg-ink text-white text-xs hover:bg-gray-700">GO</button>
+               <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
+             </div>
            ) : (
-             <>
+             // STANDARD BUTTONS
+             <div className="flex gap-2 flex-wrap">
                <button onClick={() => handleUpgrade('sophisticate')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↑ ELEVATE</button>
                <button onClick={() => handleUpgrade('simplify')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↓ GROUND</button>
                <button onClick={() => handleUpgrade('emotional')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">→ EMOTION</button>
-             </>
+               <button onClick={() => setShowCustom(true)} className="px-2 py-1 bg-white border border-ink border-dashed text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-1"><Sparkles size={10}/> CUSTOM</button>
+             </div>
            )}
         </div>
       </div>
@@ -95,60 +191,67 @@ function GridCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [inputText, setInputText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
-  const { setCenter } = useReactFlow();
+  const { setCenter, getNodes } = useReactFlow();
 
-  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode) => {
+  // --- SNAPSHOT EXPORT ---
+  const handleDownload = () => {
+    const viewport = document.querySelector('.react-flow__viewport');
+    if (viewport) {
+      toPng(viewport, { backgroundColor: '#F9F6C8', style: { transform: 'scale(2)', transformOrigin: 'top left' }})
+        .then((dataUrl) => {
+          const link = document.createElement('a');
+          link.download = 'upgrader-study-map.png';
+          link.href = dataUrl;
+          link.click();
+        });
+    }
+  };
+
+  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null) => {
     
-    // 1. Call API
-    const result = await upgradeText(parentText, mode, parentReason);
+    // API Call
+    const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt });
+    if (!result) return;
+
     const newNodeId = `${Date.now()}`;
 
-    // 2. Determine Position & Connection Logic
-    let sourceHandleId = 'bottom'; // Default
-    let targetHandleId = 'top';    // Default
-
+    // Directional Logic
+    let sourceHandleId = 'bottom'; 
+    let targetHandleId = 'top';    
     let calculatedPos = { x: 0, y: 0 };
 
     setNodes((currentNodes) => {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
-      let dx = 0;
-      let dy = 0;
+      let dx = 0; let dy = 0;
       const VERTICAL_GAP = 400;
       const HORIZONTAL_GAP = 450;
       const JITTER = (Math.random() * 60) - 30;
 
       switch (mode) {
         case 'sophisticate': // UP
-          dx = JITTER; 
-          dy = -VERTICAL_GAP; 
-          sourceHandleId = 'top-src';    // Leave from Top
-          targetHandleId = 'bottom-tgt'; // Enter at Bottom
+          dx = JITTER; dy = -VERTICAL_GAP; 
+          sourceHandleId = 'top-src'; targetHandleId = 'bottom-tgt'; 
           break;
         case 'simplify': // DOWN
-          dx = JITTER;
-          dy = VERTICAL_GAP;
-          sourceHandleId = 'bottom'; // Leave from Bottom
-          targetHandleId = 'top';    // Enter at Top
+          dx = JITTER; dy = VERTICAL_GAP;
+          sourceHandleId = 'bottom'; targetHandleId = 'top';
           break;
         case 'emotional': // RIGHT
         case 'action':    
-          dx = HORIZONTAL_GAP;
-          dy = JITTER; 
-          sourceHandleId = 'right'; // Leave from Right
-          targetHandleId = 'left';  // Enter at Left
+          dx = HORIZONTAL_GAP; dy = JITTER; 
+          sourceHandleId = 'right'; targetHandleId = 'left';
+          break;
+        case 'custom': // BOTTOM RIGHT (Diagonal)
+          dx = HORIZONTAL_GAP * 0.8; dy = VERTICAL_GAP * 0.8;
+          sourceHandleId = 'right'; targetHandleId = 'left';
           break;
         default:
-          dx = JITTER;
-          dy = VERTICAL_GAP;
+          dx = JITTER; dy = VERTICAL_GAP;
       }
 
-      const newPos = { 
-        x: parentNode.position.x + dx, 
-        y: parentNode.position.y + dy 
-      };
-      
+      const newPos = { x: parentNode.position.x + dx, y: parentNode.position.y + dy };
       calculatedPos = newPos;
 
       const newNode = {
@@ -158,21 +261,20 @@ function GridCanvas() {
         data: { 
           text: result.text, 
           reason: result.reason,
+          previousText: parentText, // For Diff Highlighting
           onUpgrade: handleUpgradeRequest 
         },
       };
       return [...currentNodes, newNode];
     });
 
-    // 3. Add Edge with Specific Handles
+    // Add Edge
     setEdges((currentEdges) => {
        const newEdge = {
         id: `e${parentId}-${newNodeId}`,
-        source: parentId,
-        target: newNodeId,
-        sourceHandle: sourceHandleId, // <--- Key Change
-        targetHandle: targetHandleId, // <--- Key Change
-        type: 'default', // 'bezier' usually looks best for side connections
+        source: parentId, target: newNodeId,
+        sourceHandle: sourceHandleId, targetHandle: targetHandleId,
+        type: 'default', 
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
         labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
@@ -184,42 +286,38 @@ function GridCanvas() {
       return [...currentEdges, newEdge];
     });
 
-    // 4. Animate Camera
-    setCenter(
-      calculatedPos.x + 175, 
-      calculatedPos.y + 100, 
-      { zoom: 1.1, duration: 1200 }
-    );
+    setCenter(calculatedPos.x + 175, calculatedPos.y + 100, { zoom: 1.1, duration: 1200 });
 
   }, [setCenter]);
 
   const startSession = () => {
     if(!inputText) return;
     setHasStarted(true);
-    const startX = window.innerWidth / 2 - 175;
+    const startX = window.innerWidth / 2 - 190;
     const startY = 100;
     
-    setNodes([
-      {
-        id: '1',
-        type: 'paper',
+    setNodes([{
+        id: '1', type: 'paper',
         position: { x: startX, y: startY },
-        data: { text: inputText, onUpgrade: handleUpgradeRequest },
-      },
-    ]);
+        data: { text: inputText, onUpgrade: handleUpgradeRequest, previousText: null },
+      }]);
     
-    setCenter(startX + 175, startY + 100, { zoom: 1, duration: 800 });
+    setCenter(startX + 190, startY + 100, { zoom: 1, duration: 800 });
   };
 
   return (
     <div className="w-screen h-screen font-serif text-ink relative">
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Upgrader</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
         </div>
+        {/* SNAPSHOT BUTTON */}
+        <button onClick={handleDownload} className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" title="Download Snapshot">
+          <Camera size={20} />
+        </button>
       </div>
 
       {!hasStarted && (
@@ -244,10 +342,8 @@ function GridCanvas() {
       )}
 
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        nodes={nodes} edges={edges}
+        onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
         className="bg-grid-bg"

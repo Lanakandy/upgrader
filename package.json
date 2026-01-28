@@ -12,6 +12,8 @@
   "dependencies": {
     "@xyflow/react": "^12.10.0",
     "clsx": "^2.1.1",
+    "diff": "^8.0.3",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
