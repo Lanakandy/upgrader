@@ -12,10 +12,9 @@ import {
 import '@xyflow/react/dist/style.css';
 import { ArrowRight, Loader2 } from 'lucide-react';
 
-// --- 1. API SERVICE (Updated to call Netlify Function) ---
+// --- 1. API SERVICE ---
 const upgradeText = async (text, mode, context) => {
   try {
-    // We call our local Netlify function
     const response = await fetch("/.netlify/functions/upgrade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -25,7 +24,6 @@ const upgradeText = async (text, mode, context) => {
     if (!response.ok) throw new Error("Netlify Function failed");
 
     const data = await response.json();
-    // Parse the content string that contains the JSON object
     return JSON.parse(data.choices[0].message.content);
   } catch (error) {
     console.error(error);
@@ -33,13 +31,14 @@ const upgradeText = async (text, mode, context) => {
   }
 };
 
-// --- 2. CUSTOM NODE COMPONENT (Unchanged logic, just simplified props) ---
+// --- 2. CUSTOM NODE COMPONENT ---
 const PaperNode = ({ data, id }) => {
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async (mode) => {
     setLoading(true);
-    await data.onUpgrade(id, data.text, mode);
+    // Passing reason directly prevents stale state issues
+    await data.onUpgrade(id, data.text, data.reason, mode);
     setLoading(false);
   };
 
@@ -79,49 +78,54 @@ export default function App() {
   const [hasStarted, setHasStarted] = useState(false);
 
   // Helper to add a new node
-  const handleUpgradeRequest = useCallback(async (parentId, parentText, mode) => {
-    const parentNode = nodes.find(n => n.id === parentId);
-    if (!parentNode) return;
-
-    // No longer passing API key here
-    const result = await upgradeText(parentText, mode, parentNode.data.reason);
-
-    const newNodeId = `${nodes.length + 1}`;
+  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode) => {
     
-    // Calculate position
-    const newPos = { 
-      x: parentNode.position.x + (Math.random() * 100 - 50), 
-      y: parentNode.position.y + 250 
-    };
+    // 1. Call API
+    const result = await upgradeText(parentText, mode, parentReason);
+    const newNodeId = `${Date.now()}`; // Unique ID
 
-    const newNode = {
-      id: newNodeId,
-      type: 'paper',
-      position: newPos,
-      data: { 
-        text: result.text, 
-        reason: result.reason,
-        onUpgrade: handleUpgradeRequest 
-      },
-    };
+    // 2. Functional update for Nodes (Safe way to add nodes)
+    setNodes((currentNodes) => {
+      const parentNode = currentNodes.find(n => n.id === parentId);
+      if (!parentNode) return currentNodes;
 
-    const newEdge = {
-      id: `e${parentId}-${newNodeId}`,
-      source: parentId,
-      target: newNodeId,
-      type: 'default', 
-      label: result.reason, 
-      labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
-      labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
-      labelBgPadding: [8, 4],
-      labelBgBorderRadius: 10,
-      style: { stroke: '#1a1a1a', strokeDasharray: '5,5', strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a' },
-    };
+      const newPos = { 
+        x: parentNode.position.x + (Math.random() * 100 - 50), 
+        y: parentNode.position.y + 250 
+      };
 
-    setNodes((nds) => nds.concat(newNode));
-    setEdges((eds) => eds.concat(newEdge));
-  }, [nodes]);
+      const newNode = {
+        id: newNodeId,
+        type: 'paper',
+        position: newPos,
+        data: { 
+          text: result.text, 
+          reason: result.reason,
+          onUpgrade: handleUpgradeRequest 
+        },
+      };
+      return [...currentNodes, newNode];
+    });
+
+    // 3. Functional update for Edges
+    setEdges((currentEdges) => {
+       const newEdge = {
+        id: `e${parentId}-${newNodeId}`,
+        source: parentId,
+        target: newNodeId,
+        type: 'default', 
+        label: result.reason, 
+        labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
+        labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
+        labelBgPadding: [8, 4],
+        labelBgBorderRadius: 10,
+        style: { stroke: '#1a1a1a', strokeDasharray: '5,5', strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a' },
+      };
+      return [...currentEdges, newEdge];
+    });
+
+  }, []); // Dependency array is intentionally empty to prevent stale closures
 
   const startSession = () => {
     if(!inputText) return;
@@ -139,7 +143,7 @@ export default function App() {
   return (
     <div className="w-screen h-screen font-serif text-ink relative">
       
-      {/* HEADER UI - Removed API Key Input */}
+      {/* HEADER UI */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
           <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
