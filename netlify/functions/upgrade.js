@@ -15,19 +15,27 @@ export default async (req, context) => {
       systemPrompt = "You are a dictionary. Return ONLY a JSON object with: 'definition' (max 15 words) and 'nuance' (max 10 words, explaining connotation).";
       userMessage = `Define the word "${text}" inside this context: "${context}".`;
     } 
-    // --- TASK 2: UPGRADE (STANDARD & CUSTOM) ---
+    // --- TASK 2: UPGRADE (INCREMENTAL LADDER LOGIC) ---
     else {
-      systemPrompt = "You are a philologist. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
+      // KEY CHANGE: We instruct the System to be an "Incremental Engine"
+      systemPrompt = "You are a Nuance Engine. You modify text in small, incremental steps. Avoid archaic language, 'purple prose', or over-the-top exaggerations. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
       
       const prompts = {
-        'sophisticate': "Rewrite to be more sophisticated, academic, and precise.",
-        'simplify': "Rewrite to be punchier, simpler, and more direct.",
-        'emotional': "Rewrite to focus on sensory details and emotional weight.",
-        'action': "Rewrite to make verbs active and pacing faster.",
-        'custom': customPrompt || "Rewrite this." // Use user input
+        'sophisticate': "Rewrite this to be slightly more formal and precise. Do not make it overly poetic or archaic. Just take it one step up the academic ladder.",
+        
+        'simplify': "Rewrite this to be slightly more casual and direct. Do not make it childish. Just strip away one layer of complexity.",
+        
+        'emotional': "Rewrite this to add a specific sensory detail or a slight emotional color. Do not turn it into a melodrama. Just make it feel more human.",
+        
+        'action': "Rewrite this to make the verb slightly stronger. Change passive voice to active if present. Increase the momentum just a bit.",
+        
+        'custom': customPrompt || "Rewrite this."
       };
 
-      userMessage = `${prompts[mode]}. Text: "${text}".`;
+      // KEY CHANGE: We explicitly tell the AI to compare against the input
+      userMessage = `Current Text: "${text}". 
+      Instruction: ${prompts[mode]}. 
+      Constraint: The change must be noticeable but natural. Do not change the meaning, only the register.`;
     }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -39,11 +47,12 @@ export default async (req, context) => {
         "X-Title": "Gridscape"
       },
       body: JSON.stringify({
-        "model": "openai/gpt-4o-mini",
+        "model": "openai/gpt-4o-mini", // GPT-4o-mini is great at following "nuance" instructions
         "messages": [
           { "role": "system", "content": systemPrompt },
           { "role": "user", "content": userMessage }
         ],
+        "temperature": 0.7, // Slightly lower temperature keeps it grounded
         "response_format": { "type": "json_object" }
       })
     });
