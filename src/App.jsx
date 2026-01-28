@@ -321,9 +321,12 @@ function GridCanvas() {
 
   return (
     <div className="w-screen h-screen font-serif text-ink relative">
+      
+      {/* HEADER UI (Top Left - Title Only) */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
+          {/* Title restored to text only */}
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">upgrader</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
@@ -331,6 +334,15 @@ function GridCanvas() {
         <button onClick={handleDownload} className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" title="Download Snapshot">
           <Camera size={20} />
         </button>
+      </div>
+
+      {/* LOGO UI (Bottom Right) */}
+      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
+        <img 
+          src="/logo.png" 
+          alt="Gridscape Logo" 
+          className="h-16 w-auto object-contain" 
+        />
       </div>
 
       {!hasStarted && (
