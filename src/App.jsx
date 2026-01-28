@@ -10,8 +10,8 @@ import {
   MarkerType,
   ReactFlowProvider,
   useReactFlow,
-  getRectOfNodes,
-  getTransformForBounds,
+  getNodesBounds,       // <--- FIXED NAME
+  getViewportForBounds, // <--- FIXED NAME
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
@@ -144,7 +144,6 @@ const PaperNode = ({ data, id }) => {
                <button onClick={() => handleUpgrade('sophisticate')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↑ ELEVATE</button>
                <button onClick={() => handleUpgrade('simplify')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↓ GROUND</button>
                <button onClick={() => handleUpgrade('emotional')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">→ EMOTION</button>
-               {/* UPDATED CUSTOM BUTTON - LEFT ARROW */}
                <button onClick={() => setShowCustom(true)} className="px-2 py-1 bg-white border border-ink border-dashed text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-1">
                  <ArrowLeft size={10}/> CUSTOM
                </button>
@@ -166,22 +165,24 @@ function GridCanvas() {
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
 
-  // --- UPDATED SNAPSHOT LOGIC (Full Canvas) ---
+  // --- SNAPSHOT LOGIC ---
   const handleDownload = () => {
-    // 1. Get the bounding rectangle of ALL nodes
-    const nodesBounds = getRectOfNodes(getNodes());
+    // 1. Get bounds using the NEW function name
+    const nodesBounds = getNodesBounds(getNodes());
     
-    // 2. Calculate the transform to fit everything (with margin)
+    if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
+
     const imageWidth = nodesBounds.width + 100;
     const imageHeight = nodesBounds.height + 100;
     
-    const transform = getTransformForBounds(
+    // 2. Get viewport using the NEW function name
+    const transform = getViewportForBounds(
       nodesBounds,
       imageWidth,
       imageHeight,
-      0.5, // Minimum zoom
-      2,   // Maximum zoom
-      50   // Padding
+      0.5,
+      2,
+      50
     );
 
     const viewport = document.querySelector('.react-flow__viewport');
@@ -194,8 +195,7 @@ function GridCanvas() {
         style: {
           width: imageWidth,
           height: imageHeight,
-          // This forces the screenshot to render the full computed area, not just what's visible
-          transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
         },
       }).then((dataUrl) => {
         const link = document.createElement('a');
@@ -241,11 +241,11 @@ function GridCanvas() {
           dx = HORIZONTAL_GAP; dy = JITTER; 
           sourceHandleId = 'right'; targetHandleId = 'left';
           break;
-        case 'custom': // LEFT (UPDATED LOGIC)
-          dx = -HORIZONTAL_GAP; // Move Left
+        case 'custom': // LEFT
+          dx = -HORIZONTAL_GAP; 
           dy = JITTER;
-          sourceHandleId = 'left'; // Source from Left
-          targetHandleId = 'right'; // Target at Right
+          sourceHandleId = 'left'; 
+          targetHandleId = 'right'; 
           break;
         default:
           dx = JITTER; dy = VERTICAL_GAP;
@@ -258,6 +258,8 @@ function GridCanvas() {
         id: newNodeId,
         type: 'paper',
         position: newPos,
+        width: 380, // Explicit width help for screenshot
+        height: 200,
         data: { 
           text: result.text, 
           reason: result.reason,
@@ -298,6 +300,8 @@ function GridCanvas() {
     setNodes([{
         id: '1', type: 'paper',
         position: { x: startX, y: startY },
+        width: 380,
+        height: 200,
         data: { text: inputText, onUpgrade: handleUpgradeRequest, previousText: null },
       }]);
     
