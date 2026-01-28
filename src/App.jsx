@@ -283,6 +283,9 @@ function GridCanvas() {
         id: `e${parentId}-${newNodeId}`,
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
+        
+        animated: true, // <--- ADD THIS LINE HERE
+        
         type: 'default', 
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },

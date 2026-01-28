@@ -13,3 +13,7 @@ body {
   background-image: radial-gradient(#d1cfaa 1.5px, transparent 1.5px);
   background-size: 24px 24px;
 }
+
+.react-flow__edge.animated path {
+  animation-duration: 50s !important; /* Very slow flow */
+}
