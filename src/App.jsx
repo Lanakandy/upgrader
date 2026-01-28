@@ -10,8 +10,8 @@ import {
   MarkerType,
   ReactFlowProvider,
   useReactFlow,
-  getNodesBounds,       // <--- FIXED NAME
-  getViewportForBounds, // <--- FIXED NAME
+  getNodesBounds,
+  getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
@@ -96,13 +96,24 @@ const PaperNode = ({ data, id }) => {
       <div className="absolute top-1 left-1 w-full h-full bg-white border border-ink z-10"></div>
       <div className="relative bg-white border border-ink p-6 z-20 transition-all font-serif">
         
-        {/* Handles */}
+        {/* --- HANDLES (UPDATED FOR BIDIRECTIONAL CONNECTIONS) --- */}
+        
+        {/* TOP */}
         <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
         <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        
+        {/* BOTTOM */}
         <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
         <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        
+        {/* RIGHT (Added Target) */}
         <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="target" id="right-tgt" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+
+        {/* LEFT (Added Source) */}
         <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="left-src" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+
 
         <button onClick={handleCopy} className="absolute top-2 right-2 p-1 text-gray-300 hover:text-ink transition-colors">
           {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
@@ -165,17 +176,13 @@ function GridCanvas() {
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
 
-  // --- SNAPSHOT LOGIC ---
   const handleDownload = () => {
-    // 1. Get bounds using the NEW function name
     const nodesBounds = getNodesBounds(getNodes());
-    
     if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
 
     const imageWidth = nodesBounds.width + 100;
     const imageHeight = nodesBounds.height + 100;
     
-    // 2. Get viewport using the NEW function name
     const transform = getViewportForBounds(
       nodesBounds,
       imageWidth,
@@ -199,7 +206,7 @@ function GridCanvas() {
         },
       }).then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = 'gridscape-study-map.png';
+        link.download = 'upgrade-study-map.png';
         link.href = dataUrl;
         link.click();
       });
@@ -223,8 +230,8 @@ function GridCanvas() {
       if (!parentNode) return currentNodes;
 
       let dx = 0; let dy = 0;
-      const VERTICAL_GAP = 400;
-      const HORIZONTAL_GAP = 450;
+      const VERTICAL_GAP = 500;
+      const HORIZONTAL_GAP = 750;
       const JITTER = (Math.random() * 60) - 30;
 
       switch (mode) {
@@ -244,8 +251,9 @@ function GridCanvas() {
         case 'custom': // LEFT
           dx = -HORIZONTAL_GAP; 
           dy = JITTER;
-          sourceHandleId = 'left'; 
-          targetHandleId = 'right'; 
+          // FIX: Use the new handle names for correct left-direction lines
+          sourceHandleId = 'left-src'; 
+          targetHandleId = 'right-tgt'; 
           break;
         default:
           dx = JITTER; dy = VERTICAL_GAP;
@@ -258,7 +266,7 @@ function GridCanvas() {
         id: newNodeId,
         type: 'paper',
         position: newPos,
-        width: 380, // Explicit width help for screenshot
+        width: 380,
         height: 200,
         data: { 
           text: result.text, 
@@ -312,7 +320,15 @@ function GridCanvas() {
     <div className="w-screen h-screen font-serif text-ink relative">
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
+          {/* Logo + Title Wrapper */}
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <img 
+              src="/logo.png" 
+              alt="Gridscape Logo" 
+              className="h-10 w-auto object-contain" 
+            />
+            <h1 className="text-4xl font-serif tracking-tight">Upgrader</h1>
+          </div>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
