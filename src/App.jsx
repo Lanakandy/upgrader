@@ -82,17 +82,45 @@ export default function App() {
     
     // 1. Call API
     const result = await upgradeText(parentText, mode, parentReason);
-    const newNodeId = `${Date.now()}`; // Unique ID
+    const newNodeId = `${Date.now()}`;
 
-    // 2. Functional update for Nodes (Safe way to add nodes)
+    // 2. Functional update for Nodes
     setNodes((currentNodes) => {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
+      // --- DIRECTIONAL LOGIC START ---
+      // We assume the card is roughly 350px wide and 200px tall
+      let dx = 0;
+      let dy = 0;
+      const VERTICAL_GAP = 400;
+      const HORIZONTAL_GAP = 450;
+      const JITTER = (Math.random() * 60) - 30; // Adds randomness to prevent perfect overlapping
+
+      switch (mode) {
+        case 'sophisticate': // UP (North)
+          dx = JITTER; 
+          dy = -VERTICAL_GAP; 
+          break;
+        case 'simplify': // DOWN (South)
+          dx = JITTER;
+          dy = VERTICAL_GAP;
+          break;
+        case 'emotional': // RIGHT (East) - expansion
+        case 'action':    
+          dx = HORIZONTAL_GAP;
+          dy = JITTER; 
+          break;
+        default: // Fallback (Down)
+          dx = JITTER;
+          dy = VERTICAL_GAP;
+      }
+
       const newPos = { 
-        x: parentNode.position.x + (Math.random() * 100 - 50), 
-        y: parentNode.position.y + 250 
+        x: parentNode.position.x + dx, 
+        y: parentNode.position.y + dy 
       };
+      // --- DIRECTIONAL LOGIC END ---
 
       const newNode = {
         id: newNodeId,
@@ -107,13 +135,13 @@ export default function App() {
       return [...currentNodes, newNode];
     });
 
-    // 3. Functional update for Edges
+    // 3. Add Edge
     setEdges((currentEdges) => {
        const newEdge = {
         id: `e${parentId}-${newNodeId}`,
         source: parentId,
         target: newNodeId,
-        type: 'default', 
+        type: 'default', // 'straight' or 'smoothstep' also look good with this layout
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
         labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
@@ -125,7 +153,7 @@ export default function App() {
       return [...currentEdges, newEdge];
     });
 
-  }, []); // Dependency array is intentionally empty to prevent stale closures
+  }, []);
 
   const startSession = () => {
     if(!inputText) return;
@@ -146,7 +174,7 @@ export default function App() {
       {/* HEADER UI */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Upgrader</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
