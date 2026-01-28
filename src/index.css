@@ -14,6 +14,7 @@ body {
   background-size: 24px 24px;
 }
 
-.react-flow__edge.animated path {
-  animation-duration: 50s !important; /* Very slow flow */
+.react-flow__edge.animated .react-flow__edge-path {
+  animation-duration: 60s !important; /* Very slow, subtle flow */
+  stroke-dasharray: 10; /* Optional: Makes the dashes slightly longer/cleaner */
 }

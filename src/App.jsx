@@ -284,7 +284,7 @@ function GridCanvas() {
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
         
-        animated: true, // <--- ADD THIS LINE HERE
+        animated: true,
         
         type: 'default', 
         label: result.reason, 
@@ -292,7 +292,7 @@ function GridCanvas() {
         labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
         labelBgPadding: [8, 4],
         labelBgBorderRadius: 10,
-        style: { stroke: '#1a1a1a', strokeDasharray: '5,5', strokeWidth: 2 },
+        style: { stroke: '#1a1a1a', strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a' },
       };
       return [...currentEdges, newEdge];
