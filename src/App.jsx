@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ReactFlow,
   useNodesState,
@@ -14,9 +14,9 @@ import {
   getTransformForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import { diffWords } from 'diff'; // We use this for the Diff feature
+import { diffWords } from 'diff';
 
 // --- 1. API SERVICE ---
 const apiCall = async (payload) => {
@@ -35,24 +35,21 @@ const apiCall = async (payload) => {
   }
 };
 
-// --- 2. COMPLEX COMPONENT: PAPER NODE ---
+// --- 2. PAPER NODE COMPONENT ---
 const PaperNode = ({ data, id }) => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
-  const [definition, setDefinition] = useState(null); // { word, text, nuance, x, y }
+  const [definition, setDefinition] = useState(null);
 
-  // A. UPGRADE HANDLER
   const handleUpgrade = async (mode, customText = null) => {
     setLoading(true);
-    // If custom, pass the specific prompt
     await data.onUpgrade(id, data.text, data.reason, mode, customText);
     setLoading(false);
     setShowCustom(false);
   };
 
-  // B. COPY HANDLER
   const handleCopy = (e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(data.text);
@@ -60,51 +57,31 @@ const PaperNode = ({ data, id }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // C. X-RAY HANDLER (Get Definition)
   const handleWordClick = async (e, word) => {
     e.stopPropagation();
-    // Reset previous definition
     setDefinition({ word, text: "Analyzing...", nuance: "...", x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-    
     const result = await apiCall({ text: word, context: data.text, task: 'define' });
-    
     if (result) {
       setDefinition(prev => ({ ...prev, text: result.definition, nuance: result.nuance }));
     }
   };
 
-  // D. DIFF RENDERING LOGIC
   const renderTextWithDiff = () => {
     if (!data.previousText) {
-      // If first node, just render words clickable
       return data.text.split(' ').map((word, i) => (
-        <span 
-          key={i} 
-          onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))}
-          className="cursor-pointer hover:bg-yellow-200 hover:text-black rounded px-0.5 transition-colors"
-        >
+        <span key={i} onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))} className="cursor-pointer hover:bg-yellow-200 hover:text-black rounded px-0.5 transition-colors">
           {word}{' '}
         </span>
       ));
     }
-
-    // Compare with previous text to highlight changes
     const diff = diffWords(data.previousText, data.text);
     return diff.map((part, i) => {
-      if (part.removed) return null; // Don't show removed words
-      
-      const style = part.added 
-        ? "bg-green-100 text-green-900 font-semibold border-b-2 border-green-300" // Highlight New
-        : "text-ink"; // Normal
-      
+      if (part.removed) return null;
+      const style = part.added ? "bg-green-100 text-green-900 font-semibold border-b-2 border-green-300" : "text-ink";
       return (
         <span key={i} className={style}>
           {part.value.split(' ').map((word, w) => (
-             <span 
-               key={w} 
-               onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))}
-               className="cursor-pointer hover:bg-yellow-200 rounded px-0.5 transition-colors"
-             >
+             <span key={w} onClick={(e) => handleWordClick(e, word.replace(/[.,]/g, ''))} className="cursor-pointer hover:bg-yellow-200 rounded px-0.5 transition-colors">
               {word}{' '}
              </span>
           ))}
@@ -127,12 +104,10 @@ const PaperNode = ({ data, id }) => {
         <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
         <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
 
-        {/* Copy Button */}
         <button onClick={handleCopy} className="absolute top-2 right-2 p-1 text-gray-300 hover:text-ink transition-colors">
           {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
         </button>
 
-        {/* X-Ray Definition Popover */}
         {definition && (
           <div className="absolute z-50 bg-ink text-white p-3 text-xs w-64 shadow-xl -top-24 left-1/2 -translate-x-1/2 pointer-events-none">
             <div className="font-bold text-yellow-200 mb-1 border-b border-gray-600 pb-1">{definition.word}</div>
@@ -140,22 +115,18 @@ const PaperNode = ({ data, id }) => {
             <div className="italic text-gray-400">"{definition.nuance}"</div>
           </div>
         )}
-        {/* Click-away listener to close definition (simplified overlay) */}
         {definition && <div className="fixed inset-0 z-40" onClick={() => setDefinition(null)}></div>}
 
-        {/* Content with Diff Highlighting */}
         <div className="mb-4 text-lg leading-relaxed text-ink pr-4">
           {renderTextWithDiff()}
         </div>
         
-        {/* Controls */}
         <div className="border-t border-dotted border-ink pt-3">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2 py-1">
                <Loader2 className="animate-spin w-3 h-3" /> PHILOLOGIZING...
              </div>
            ) : showCustom ? (
-             // CUSTOM INPUT MODE
              <div className="flex gap-2">
                <input 
                  autoFocus
@@ -169,12 +140,14 @@ const PaperNode = ({ data, id }) => {
                <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
              </div>
            ) : (
-             // STANDARD BUTTONS
              <div className="flex gap-2 flex-wrap">
                <button onClick={() => handleUpgrade('sophisticate')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↑ ELEVATE</button>
                <button onClick={() => handleUpgrade('simplify')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↓ GROUND</button>
                <button onClick={() => handleUpgrade('emotional')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">→ EMOTION</button>
-               <button onClick={() => setShowCustom(true)} className="px-2 py-1 bg-white border border-ink border-dashed text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-1"><Sparkles size={10}/> CUSTOM</button>
+               {/* UPDATED CUSTOM BUTTON - LEFT ARROW */}
+               <button onClick={() => setShowCustom(true)} className="px-2 py-1 bg-white border border-ink border-dashed text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-1">
+                 <ArrowLeft size={10}/> CUSTOM
+               </button>
              </div>
            )}
         </div>
@@ -193,23 +166,48 @@ function GridCanvas() {
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
 
-  // --- SNAPSHOT EXPORT ---
+  // --- UPDATED SNAPSHOT LOGIC (Full Canvas) ---
   const handleDownload = () => {
+    // 1. Get the bounding rectangle of ALL nodes
+    const nodesBounds = getRectOfNodes(getNodes());
+    
+    // 2. Calculate the transform to fit everything (with margin)
+    const imageWidth = nodesBounds.width + 100;
+    const imageHeight = nodesBounds.height + 100;
+    
+    const transform = getTransformForBounds(
+      nodesBounds,
+      imageWidth,
+      imageHeight,
+      0.5, // Minimum zoom
+      2,   // Maximum zoom
+      50   // Padding
+    );
+
     const viewport = document.querySelector('.react-flow__viewport');
+    
     if (viewport) {
-      toPng(viewport, { backgroundColor: '#F9F6C8', style: { transform: 'scale(2)', transformOrigin: 'top left' }})
-        .then((dataUrl) => {
-          const link = document.createElement('a');
-          link.download = 'upgrader-study-map.png';
-          link.href = dataUrl;
-          link.click();
-        });
+      toPng(viewport, {
+        backgroundColor: '#F9F6C8',
+        width: imageWidth,
+        height: imageHeight,
+        style: {
+          width: imageWidth,
+          height: imageHeight,
+          // This forces the screenshot to render the full computed area, not just what's visible
+          transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+        },
+      }).then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = 'gridscape-study-map.png';
+        link.href = dataUrl;
+        link.click();
+      });
     }
   };
 
   const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null) => {
     
-    // API Call
     const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt });
     if (!result) return;
 
@@ -243,9 +241,11 @@ function GridCanvas() {
           dx = HORIZONTAL_GAP; dy = JITTER; 
           sourceHandleId = 'right'; targetHandleId = 'left';
           break;
-        case 'custom': // BOTTOM RIGHT (Diagonal)
-          dx = HORIZONTAL_GAP * 0.8; dy = VERTICAL_GAP * 0.8;
-          sourceHandleId = 'right'; targetHandleId = 'left';
+        case 'custom': // LEFT (UPDATED LOGIC)
+          dx = -HORIZONTAL_GAP; // Move Left
+          dy = JITTER;
+          sourceHandleId = 'left'; // Source from Left
+          targetHandleId = 'right'; // Target at Right
           break;
         default:
           dx = JITTER; dy = VERTICAL_GAP;
@@ -261,14 +261,13 @@ function GridCanvas() {
         data: { 
           text: result.text, 
           reason: result.reason,
-          previousText: parentText, // For Diff Highlighting
+          previousText: parentText,
           onUpgrade: handleUpgradeRequest 
         },
       };
       return [...currentNodes, newNode];
     });
 
-    // Add Edge
     setEdges((currentEdges) => {
        const newEdge = {
         id: `e${parentId}-${newNodeId}`,
@@ -309,12 +308,11 @@ function GridCanvas() {
     <div className="w-screen h-screen font-serif text-ink relative">
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Upgrader</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
         </div>
-        {/* SNAPSHOT BUTTON */}
         <button onClick={handleDownload} className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" title="Download Snapshot">
           <Camera size={20} />
         </button>
