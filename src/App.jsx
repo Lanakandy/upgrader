@@ -8,6 +8,8 @@ import {
   Handle,
   Position,
   MarkerType,
+  ReactFlowProvider, // New import
+  useReactFlow,      // New import for animation
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -37,7 +39,6 @@ const PaperNode = ({ data, id }) => {
 
   const handleUpgrade = async (mode) => {
     setLoading(true);
-    // Passing reason directly prevents stale state issues
     await data.onUpgrade(id, data.text, data.reason, mode);
     setLoading(false);
   };
@@ -70,48 +71,51 @@ const PaperNode = ({ data, id }) => {
 
 const nodeTypes = { paper: PaperNode };
 
-// --- 3. MAIN APP ---
-export default function App() {
+// --- 3. THE CANVAS LOGIC (Inner Component) ---
+function GridCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [inputText, setInputText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
+  
+  // HOOK: This enables the camera animation
+  const { setCenter } = useReactFlow();
 
-  // Helper to add a new node
   const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode) => {
     
     // 1. Call API
     const result = await upgradeText(parentText, mode, parentReason);
     const newNodeId = `${Date.now()}`;
 
-    // 2. Functional update for Nodes
+    // 2. Functional update for Nodes with Directional Logic
+    let calculatedPos = { x: 0, y: 0 };
+
     setNodes((currentNodes) => {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
-      // --- DIRECTIONAL LOGIC START ---
-      // We assume the card is roughly 350px wide and 200px tall
+      // Directional Logic
       let dx = 0;
       let dy = 0;
       const VERTICAL_GAP = 400;
       const HORIZONTAL_GAP = 450;
-      const JITTER = (Math.random() * 60) - 30; // Adds randomness to prevent perfect overlapping
+      const JITTER = (Math.random() * 60) - 30;
 
       switch (mode) {
-        case 'sophisticate': // UP (North)
+        case 'sophisticate': // UP
           dx = JITTER; 
           dy = -VERTICAL_GAP; 
           break;
-        case 'simplify': // DOWN (South)
+        case 'simplify': // DOWN
           dx = JITTER;
           dy = VERTICAL_GAP;
           break;
-        case 'emotional': // RIGHT (East) - expansion
+        case 'emotional': // RIGHT
         case 'action':    
           dx = HORIZONTAL_GAP;
           dy = JITTER; 
           break;
-        default: // Fallback (Down)
+        default:
           dx = JITTER;
           dy = VERTICAL_GAP;
       }
@@ -120,7 +124,9 @@ export default function App() {
         x: parentNode.position.x + dx, 
         y: parentNode.position.y + dy 
       };
-      // --- DIRECTIONAL LOGIC END ---
+      
+      // Save for animation later
+      calculatedPos = newPos;
 
       const newNode = {
         id: newNodeId,
@@ -141,7 +147,7 @@ export default function App() {
         id: `e${parentId}-${newNodeId}`,
         source: parentId,
         target: newNodeId,
-        type: 'default', // 'straight' or 'smoothstep' also look good with this layout
+        type: 'default',
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
         labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
@@ -153,19 +159,35 @@ export default function App() {
       return [...currentEdges, newEdge];
     });
 
-  }, []);
+    // 4. ANIMATION MAGIC
+    // We target the center of the new node (Card width is ~350, so +175. Height ~200 so +100)
+    setCenter(
+      calculatedPos.x + 175, 
+      calculatedPos.y + 100, 
+      { zoom: 1.2, duration: 1200 } // Duration in ms
+    );
+
+  }, [setCenter]); // Added setCenter to dependencies
 
   const startSession = () => {
     if(!inputText) return;
     setHasStarted(true);
+    
+    // Initial centering
+    const startX = window.innerWidth / 2 - 175;
+    const startY = 100;
+    
     setNodes([
       {
         id: '1',
         type: 'paper',
-        position: { x: window.innerWidth / 2 - 175, y: 100 },
+        position: { x: startX, y: startY },
         data: { text: inputText, onUpgrade: handleUpgradeRequest },
       },
     ]);
+    
+    // Animate to start
+    setCenter(startX + 175, startY + 100, { zoom: 1, duration: 800 });
   };
 
   return (
@@ -174,7 +196,7 @@ export default function App() {
       {/* HEADER UI */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Upgrader</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
@@ -217,5 +239,14 @@ export default function App() {
         <Controls className="!bg-white !border !border-ink !shadow-hard !text-ink !rounded-none" />
       </ReactFlow>
     </div>
+  );
+}
+
+// --- 4. EXPORTED WRAPPER ---
+export default function App() {
+  return (
+    <ReactFlowProvider>
+      <GridCanvas />
+    </ReactFlowProvider>
   );
 }
