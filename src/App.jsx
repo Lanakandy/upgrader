@@ -8,8 +8,8 @@ import {
   Handle,
   Position,
   MarkerType,
-  ReactFlowProvider, // New import
-  useReactFlow,      // New import for animation
+  ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -33,7 +33,7 @@ const upgradeText = async (text, mode, context) => {
   }
 };
 
-// --- 2. CUSTOM NODE COMPONENT ---
+// --- 2. CUSTOM NODE COMPONENT (Updated with Multiple Handles) ---
 const PaperNode = ({ data, id }) => {
   const [loading, setLoading] = useState(false);
 
@@ -48,8 +48,27 @@ const PaperNode = ({ data, id }) => {
       <div className="absolute top-2 left-2 w-full h-full bg-white border border-ink z-0"></div>
       <div className="absolute top-1 left-1 w-full h-full bg-white border border-ink z-10"></div>
       <div className="relative bg-white border border-ink p-6 z-20 transition-all font-serif">
-        <Handle type="target" position={Position.Top} className="!bg-ink !w-2 !h-2" />
+        
+        {/* --- HANDLES (Connectors) --- */}
+        {/* We stack Source and Target handles on top of each other to keep it clean */}
+        
+        {/* TOP: Input from Above / Output to Above */}
+        <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-2 !h-2" />
+        <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-2 !h-2" />
+
+        {/* BOTTOM: Output to Below / Input from Below */}
+        <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-2 !h-2" />
+        <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-2 !h-2" />
+
+        {/* RIGHT: Output to Right */}
+        <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2" />
+
+        {/* LEFT: Input from Left */}
+        <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2" />
+
+        {/* --- CONTENT --- */}
         <div className="mb-4 text-lg leading-relaxed text-ink">{data.text}</div>
+        
         <div className="border-t border-dotted border-ink pt-3 flex gap-2 flex-wrap">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2">
@@ -63,7 +82,6 @@ const PaperNode = ({ data, id }) => {
              </>
            )}
         </div>
-        <Handle type="source" position={Position.Bottom} className="!bg-ink !w-2 !h-2" />
       </div>
     </div>
   );
@@ -71,14 +89,12 @@ const PaperNode = ({ data, id }) => {
 
 const nodeTypes = { paper: PaperNode };
 
-// --- 3. THE CANVAS LOGIC (Inner Component) ---
+// --- 3. THE CANVAS LOGIC ---
 function GridCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [inputText, setInputText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
-  
-  // HOOK: This enables the camera animation
   const { setCenter } = useReactFlow();
 
   const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode) => {
@@ -87,14 +103,16 @@ function GridCanvas() {
     const result = await upgradeText(parentText, mode, parentReason);
     const newNodeId = `${Date.now()}`;
 
-    // 2. Functional update for Nodes with Directional Logic
+    // 2. Determine Position & Connection Logic
+    let sourceHandleId = 'bottom'; // Default
+    let targetHandleId = 'top';    // Default
+
     let calculatedPos = { x: 0, y: 0 };
 
     setNodes((currentNodes) => {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
-      // Directional Logic
       let dx = 0;
       let dy = 0;
       const VERTICAL_GAP = 400;
@@ -105,15 +123,21 @@ function GridCanvas() {
         case 'sophisticate': // UP
           dx = JITTER; 
           dy = -VERTICAL_GAP; 
+          sourceHandleId = 'top-src';    // Leave from Top
+          targetHandleId = 'bottom-tgt'; // Enter at Bottom
           break;
         case 'simplify': // DOWN
           dx = JITTER;
           dy = VERTICAL_GAP;
+          sourceHandleId = 'bottom'; // Leave from Bottom
+          targetHandleId = 'top';    // Enter at Top
           break;
         case 'emotional': // RIGHT
         case 'action':    
           dx = HORIZONTAL_GAP;
           dy = JITTER; 
+          sourceHandleId = 'right'; // Leave from Right
+          targetHandleId = 'left';  // Enter at Left
           break;
         default:
           dx = JITTER;
@@ -125,7 +149,6 @@ function GridCanvas() {
         y: parentNode.position.y + dy 
       };
       
-      // Save for animation later
       calculatedPos = newPos;
 
       const newNode = {
@@ -141,13 +164,15 @@ function GridCanvas() {
       return [...currentNodes, newNode];
     });
 
-    // 3. Add Edge
+    // 3. Add Edge with Specific Handles
     setEdges((currentEdges) => {
        const newEdge = {
         id: `e${parentId}-${newNodeId}`,
         source: parentId,
         target: newNodeId,
-        type: 'default',
+        sourceHandle: sourceHandleId, // <--- Key Change
+        targetHandle: targetHandleId, // <--- Key Change
+        type: 'default', // 'bezier' usually looks best for side connections
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
         labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
@@ -159,21 +184,18 @@ function GridCanvas() {
       return [...currentEdges, newEdge];
     });
 
-    // 4. ANIMATION MAGIC
-    // We target the center of the new node (Card width is ~350, so +175. Height ~200 so +100)
+    // 4. Animate Camera
     setCenter(
       calculatedPos.x + 175, 
       calculatedPos.y + 100, 
-      { zoom: 1.2, duration: 1200 } // Duration in ms
+      { zoom: 1.1, duration: 1200 }
     );
 
-  }, [setCenter]); // Added setCenter to dependencies
+  }, [setCenter]);
 
   const startSession = () => {
     if(!inputText) return;
     setHasStarted(true);
-    
-    // Initial centering
     const startX = window.innerWidth / 2 - 175;
     const startY = 100;
     
@@ -186,14 +208,11 @@ function GridCanvas() {
       },
     ]);
     
-    // Animate to start
     setCenter(startX + 175, startY + 100, { zoom: 1, duration: 800 });
   };
 
   return (
     <div className="w-screen h-screen font-serif text-ink relative">
-      
-      {/* HEADER UI */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
           <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridscape</h1>
@@ -203,7 +222,6 @@ function GridCanvas() {
         </div>
       </div>
 
-      {/* START SCREEN MODAL */}
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
@@ -225,7 +243,6 @@ function GridCanvas() {
         </div>
       )}
 
-      {/* CANVAS */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -242,7 +259,6 @@ function GridCanvas() {
   );
 }
 
-// --- 4. EXPORTED WRAPPER ---
 export default function App() {
   return (
     <ReactFlowProvider>
