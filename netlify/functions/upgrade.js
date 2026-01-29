@@ -12,28 +12,61 @@ export default async (req, context) => {
 
     // --- TASK 1: LEXICAL X-RAY (DEFINITION) ---
     if (task === 'define') {
-      systemPrompt = "You are a dictionary. Return ONLY a JSON object with: 'definition' (max 15 words) and 'nuance' (max 10 words, explaining connotation).";
-      userMessage = `Define the word "${text}" inside this context: "${context}".`;
+      systemPrompt = "You are a Etymologist and Lexicographer. Return ONLY a JSON object with: 'definition' (concise, max 15 words) and 'nuance' (max 10 words, explaining the specific flavor, connotation, or register of the word).";
+      userMessage = `Define the word "${text}" as it is used in this specific context: "${context}".`;
     } 
-    // --- TASK 2: UPGRADE (DIRECTIONAL LADDER LOGIC) ---
+    // --- TASK 2: UPGRADE (LINGUISTIC EVOLUTION) ---
     else {
-      systemPrompt = "You are a Philology Engine. Your goal is to move text along a specific vector (Formality, Complexity, Emotion). You must avoid loops. Return ONLY a JSON object with: 'text' (the upgraded sentence) and 'reason' (max 10 words academic explanation).";
+      systemPrompt = `You are an expert Applied Linguist and Writing Coach. 
+      Your goal is to rewrite user text to help language learners understand different registers and styles.
+      
+      CRITICAL RULES:
+      1. PRESERVE MEANING: Do not change the fundamental truth of the sentence.
+      2. EDUCATIONAL VALUE: The 'reason' field must explain the *linguistic mechanism* used (e.g., "Used a participial phrase," "Nominalization for weight," "Specific sensory detail").
+      3. OUTPUT FORMAT: Return ONLY a JSON object with: 'text' (the rewritten sentence) and 'reason' (max 15 words).`;
       
       const prompts = {
-        'sophisticate': "VECTOR: INCREASE FORMALITY. Analyze the current register. The output must be strictly MORE formal/academic than the input. Do not swap for a synonym of equal weight (e.g., do not swap 'glad' for 'happy'). You must climb the ladder one distinct step.",
+        // GOAL: CEFR C1/C2 Level - High Register
+        'sophisticate': `
+          DIRECTION: ELEVATE (ACADEMIC/LITERARY).
+          Target: CEFR C1/C2 Proficiency.
+          Mechanism: 
+          1. Syntactic Complexity: Use subordination, inversion, or participial phrases instead of simple subject-verb structures.
+          2. Lexical Precision: Replace generic verbs (get, do, make) with precise verbs.
+          3. Tone: Authoritative and refined.
+          Example: "I am really hungry" -> "I am overcome by a ravenous appetite." or "A profound hunger has seized me."
+        `,
         
-        'simplify': "VECTOR: DECREASE COMPLEXITY. Analyze the current register. The output must be strictly SIMPLER/PLAINER than the input. Strip away adornment. Use Anglo-Saxon roots over Latin ones.",
+        // GOAL: Clarity, Conciseness, Natural Flow
+        'simplify': `
+          DIRECTION: GROUND (CLARITY/DIRECTNESS).
+          Target: Natural, punchy, modern prose (Hemingway style).
+          Mechanism:
+          1. Remove unnecessary modifiers and adjectives.
+          2. Unpack complex grammar into direct Subject-Verb-Object structures.
+          3. Choose strong, simple Anglo-Saxon roots over Latinate words.
+          4. If the input is already simple, make it *idiomatic* and conversational.
+          Example: "I am overcome by a ravenous appetite" -> "I'm starving."
+        `,
         
-        'emotional': "VECTOR: INCREASE INTENSITY. Analyze the current emotional weight. The output must evoke a STRONGER sensory or emotional response. Move from 'telling' to 'showing'.",
-        
-        'action': "VECTOR: INCREASE MOMENTUM. Make the verbs stronger and the sentence structure more propulsive.",
-        
-        'custom': customPrompt || "Rewrite this."
+        // GOAL: Show Don't Tell, Sensory Detail, Context
+        'emotional': `
+          DIRECTION: NUANCE & EXPANSION.
+          Target: Creative Non-Fiction / Novelist style.
+          Mechanism:
+          1. "Show, Don't Tell": Don't say the emotion; describe the physical sensation or the environment.
+          2. Add Detail: Introduce a specific detail that implies the context.
+          3. Expand: You are allowed to make the sentence longer to add this depth.
+          Example: "I am really hungry" -> "My stomach gave a hollow rumble, reminding me I hadn't eaten since dawn."
+        `,
+                     
+        'custom': `Instruction: ${customPrompt || "Rewrite this."}`
       };
 
-      userMessage = `Current Text: "${text}". 
-      Instruction: ${prompts[mode]}. 
-      Constraint: The change must be noticeable and directional. If the mode is 'sophisticate', the result MUST be more complex than the input. Do not loop.`;
+      userMessage = `Original Text: "${text}". 
+      ${prompts[mode]}
+      
+      Final Constraint: Ensure the output is distinctly different from the input. Do not loop.`;
     }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -45,13 +78,12 @@ export default async (req, context) => {
         "X-Title": "Gridscape"
       },
       body: JSON.stringify({
-        "model": "openai/gpt-4o-mini",
+        "model": "openai/gpt-4o-mini", // GPT-4o-mini is excellent for this, but Claude-3-Haiku is also great for creative nuance if you switch models.
         "messages": [
           { "role": "system", "content": systemPrompt },
           { "role": "user", "content": userMessage }
         ],
-        // Increased from 0.7 to 0.85 to break deterministic loops
-        "temperature": 0.85, 
+        "temperature": 0.9, // Higher temperature for more creative linguistic variety
         "response_format": { "type": "json_object" }
       })
     });
