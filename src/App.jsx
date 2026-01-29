@@ -296,24 +296,23 @@ function GridCanvas() {
       return [...currentNodes, newNode];
     });
 
-    const newEdge = {
+    setEdges((currentEdges) => {  // <--- You were missing this line
+      const newEdge = {
         id: `e${parentId}-${newNodeId}`,
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
-        animated: true, // This triggers the class .react-flow__edge.animated
-        type: 'smoothstep', // Change from 'default' to 'smoothstep' for a more schematic/circuit look
-        // We remove specific style overrides so CSS can handle the stroke dash
+        animated: true,
+        type: 'smoothstep',
         style: { stroke: '#1a1a1a', strokeWidth: 2 }, 
         
-        // Label Styling
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700 },
         labelBgStyle: { fill: '#F9F6C8', stroke: '#1a1a1a', strokeWidth: 1 },
         labelBgPadding: [6, 4],
-        labelBgBorderRadius: 0, // Hard corners
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 }, // Larger arrow
+        labelBgBorderRadius: 0,
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 },
       };
-      playSound('paper'); // <--- Sound on new creation
+      playSound('paper');
       return [...currentEdges, newEdge];
     });
 
