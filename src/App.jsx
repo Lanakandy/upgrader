@@ -326,7 +326,7 @@ function GridCanvas() {
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
           {/* Title restored to text only */}
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">upgrader</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·i</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
