@@ -20,13 +20,13 @@ import { diffWords } from 'diff';
 
 const playSound = (type) => {
   const sounds = {
-    click: 'https://cdn.freesound.org/previews/256/256116_3263906-lq.mp3', // Soft click
-    paper: 'https://cdn.freesound.org/previews/162/162482_2970724-lq.mp3', // Paper rustle
-    write: 'https://cdn.freesound.org/previews/240/240905_4303126-lq.mp3', // Typewriter/Scribble
+    click: '/soft_click.wav',
+    paper: '/paper_rustle.wav',
+    write: '/typewriter.wav',
   };
   
   const audio = new Audio(sounds[type]);
-  audio.volume = 0.2; // Keep it subtle
+  audio.volume = 0.3; // Adjusted volume slightly for local files
   audio.play().catch(e => console.log("Audio interaction needed first"));
 };
 
@@ -91,7 +91,7 @@ const PaperNode = ({ data, id }) => {
     const diff = diffWords(data.previousText, data.text);
     return diff.map((part, i) => {
       if (part.removed) return null;
-      const style = part.added ? "bg-green-100 text-green-900 font-semibold border-b-2 border-green-300" : "text-ink";
+      const style = part.added ? "bg-green-100 text-green-900 font-semibold border-b border-green-300" : "text-ink";
       return (
         <span key={i} className={style}>
           {part.value.split(' ').map((word, w) => (
@@ -107,32 +107,26 @@ const PaperNode = ({ data, id }) => {
   return (
     <div className="relative group w-[380px] node-enter-anim"> 
       
-      {/* "Hard Shadow" Effect: Solid block behind the card */}
-      <div className="absolute top-2 left-2 w-full h-full bg-black z-0 transition-transform group-hover:translate-x-1 group-hover:translate-y-1"></div>
-      
-      {/* Main Card */}
-      <div className="relative bg-white border-2 border-ink p-6 z-20 font-serif">
+      <div className="relative bg-white border border-ink p-6 z-20 font-serif
+                      shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)] 
+                      group-hover:shadow-[5px_5px_0px_0px_rgba(26,26,26,1)]
+                      group-hover:-translate-y-0.5 group-hover:-translate-x-0.5
+                      transition-all duration-300 ease-out">
         
-        {/* --- HANDLES (UPDATED FOR BIDIRECTIONAL CONNECTIONS) --- */}
+        {/* --- HANDLES --- */}
+        <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         
-        {/* TOP */}
-        <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
-        <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         
-        {/* BOTTOM */}
-        <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
-        <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
-        
-        {/* RIGHT (Added Target) */}
-        <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
-        <Handle type="target" id="right-tgt" position={Position.Right} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Handle type="target" id="right-tgt" position={Position.Right} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-        {/* LEFT (Added Source) */}
-        <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
-        <Handle type="source" id="left-src" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
+        <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Handle type="source" id="left-src" position={Position.Left} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-
-        <button onClick={handleCopy} className="absolute top-2 right-2 p-1 hover:bg-yellow-200 transition-colors border border-transparent hover:border-ink">
+        <button onClick={handleCopy} className="absolute top-2 right-2 p-1 hover:bg-yellow-200 transition-colors opacity-50 hover:opacity-100">
           {copied ? <Check size={14} className="text-ink" /> : <Copy size={14} />}
         </button>
 
@@ -149,33 +143,42 @@ const PaperNode = ({ data, id }) => {
           {renderTextWithDiff()}
         </div>
         
-        <div className="border-t-2 border-dotted border-ink/20 pt-4 mt-2">
+        <div className="border-t border-dotted border-ink/30 pt-4 mt-2">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2 py-1 text-gray-500">
                <Loader2 className="animate-spin w-3 h-3" /> ANALYZING TEXTURE...
              </div>
            ) : showCustom ? (
-             // ... Custom Input Logic ...
              <div className="flex gap-2">
                <input 
                  autoFocus
-                 className="flex-1 bg-gray-50 border-b-2 border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
+                 className="flex-1 bg-gray-50 border-b border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
                  placeholder="Prompt..."
                  value={customPrompt}
                  onChange={e => setCustomPrompt(e.target.value)}
                  onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
                />
-               <button onClick={() => handleUpgrade('custom', customPrompt)} className="px-2 bg-ink text-white text-xs hover:bg-gray-700">GO</button>
+               <button onClick={() => handleUpgrade('custom', customPrompt)} className="px-2 bg-ink text-white text-xs hover:bg-gray-700 font-mono">GO</button>
                <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
              </div>
            ) : (
-             <div className="flex gap-2 flex-wrap">
+             <div className="flex gap-2 flex-wrap items-center">
                <button onClick={() => handleUpgrade('sophisticate')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↑ Elevate</button>
                <button onClick={() => handleUpgrade('simplify')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↓ Ground</button>
                <button onClick={() => handleUpgrade('emotional')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">→ Emotion</button>
-               <button onClick={() => setShowCustom(true)} className="px-2 py-1 ml-auto text-ink hover:rotate-90 transition-transform">
-                 <Sparkles size={14}/>
-               </button>
+               
+               {/* UPDATED CUSTOM BUTTON WITH TOOLTIP */}
+               <button 
+                  onClick={() => setShowCustom(true)} 
+                  className="relative group/btn px-2 py-1 ml-auto text-ink hover:bg-yellow-200 transition-colors"
+                >
+                  <Sparkles size={14} className="transition-transform duration-300 group-hover/btn:rotate-90"/>
+                  
+                  {/* Tooltip */}
+                  <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap bg-ink text-white text-[10px] font-mono font-bold px-2 py-1 z-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+                    CUSTOM PROMPT
+  </div>
+</button>
              </div>
            )}
         </div>
