@@ -236,57 +236,93 @@ function GridCanvas() {
 
   const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null) => {
     
+    // 1. Get the content from API
     const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt });
     if (!result) return;
 
     const newNodeId = `${Date.now()}`;
-
-    // Directional Logic
     let sourceHandleId = 'bottom'; 
     let targetHandleId = 'top';    
     let calculatedPos = { x: 0, y: 0 };
+
+    // 2. Define the ideal spacing
+    const VERTICAL_GAP = 400;   // Reduced slightly to keep things tighter
+    const HORIZONTAL_GAP = 600; 
+    const NODE_WIDTH = 400;     // Width of node (380) + gap
+    const NODE_HEIGHT = 250;    // Height of node (approx 200) + gap
+
+    // 3. Determine Direction Vector
+    let dx = 0; 
+    let dy = 0;
+    let directionType = 'vertical'; // 'vertical' or 'horizontal'
+
+    switch (mode) {
+      case 'sophisticate': // UP
+        dy = -VERTICAL_GAP; 
+        sourceHandleId = 'top-src'; targetHandleId = 'bottom-tgt'; 
+        directionType = 'vertical';
+        break;
+      case 'simplify': // DOWN
+        dy = VERTICAL_GAP;
+        sourceHandleId = 'bottom'; targetHandleId = 'top';
+        directionType = 'vertical';
+        break;
+      case 'emotional': // RIGHT
+        dx = HORIZONTAL_GAP; 
+        sourceHandleId = 'right'; targetHandleId = 'left';
+        directionType = 'horizontal';
+        break;
+      case 'custom': // LEFT
+        dx = -HORIZONTAL_GAP; 
+        sourceHandleId = 'left-src'; targetHandleId = 'right-tgt'; 
+        directionType = 'horizontal';
+        break;
+      default:
+        dy = VERTICAL_GAP;
+    }
 
     setNodes((currentNodes) => {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
-      let dx = 0; let dy = 0;
-      const VERTICAL_GAP = 500;
-      const HORIZONTAL_GAP = 750;
-      const JITTER = (Math.random() * 60) - 30;
+      // 4. Calculate Initial Proposed Position
+      let candidateX = parentNode.position.x + dx;
+      let candidateY = parentNode.position.y + dy;
 
-      switch (mode) {
-        case 'sophisticate': // UP
-          dx = JITTER; dy = -VERTICAL_GAP; 
-          sourceHandleId = 'top-src'; targetHandleId = 'bottom-tgt'; 
-          break;
-        case 'simplify': // DOWN
-          dx = JITTER; dy = VERTICAL_GAP;
-          sourceHandleId = 'bottom'; targetHandleId = 'top';
-          break;
-        case 'emotional': // RIGHT
-        case 'action':    
-          dx = HORIZONTAL_GAP; dy = JITTER; 
-          sourceHandleId = 'right'; targetHandleId = 'left';
-          break;
-        case 'custom': // LEFT
-          dx = -HORIZONTAL_GAP; 
-          dy = JITTER;
-          // FIX: Use the new handle names for correct left-direction lines
-          sourceHandleId = 'left-src'; 
-          targetHandleId = 'right-tgt'; 
-          break;
-        default:
-          dx = JITTER; dy = VERTICAL_GAP;
+      // 5. COLLISION DETECTION LOOP
+      // We check if any existing node is occupying the candidate spot.
+      // If so, we shift the candidate spot until it's free.
+      let overlap = true;
+      let shiftCount = 0;
+      
+      while (overlap) {
+        overlap = currentNodes.some(n => {
+          // Check if a node is within a collision box of the candidate
+          const xDiff = Math.abs(n.position.x - candidateX);
+          const yDiff = Math.abs(n.position.y - candidateY);
+          return xDiff < (NODE_WIDTH - 50) && yDiff < (NODE_HEIGHT - 50);
+        });
+
+        if (overlap) {
+          shiftCount++;
+          // Strategy: If moving Vertically, shift sideways to avoid overlap.
+          // If moving Horizontally, shift down.
+          if (directionType === 'vertical') {
+             // Alternate shifts: Right, then Left, then Right...
+             const sign = shiftCount % 2 === 0 ? -1 : 1;
+             candidateX += (NODE_WIDTH * sign * Math.ceil(shiftCount/2));
+          } else {
+             candidateY += NODE_HEIGHT;
+          }
+        }
       }
 
-      const newPos = { x: parentNode.position.x + dx, y: parentNode.position.y + dy };
-      calculatedPos = newPos;
+      calculatedPos = { x: candidateX, y: candidateY };
 
       const newNode = {
         id: newNodeId,
         type: 'paper',
-        position: newPos,
+        position: calculatedPos, // Use the collision-free position
         width: 380,
         height: 200,
         data: { 
@@ -296,18 +332,18 @@ function GridCanvas() {
           onUpgrade: handleUpgradeRequest 
         },
       };
+      
       return [...currentNodes, newNode];
     });
 
-    setEdges((currentEdges) => {  // <--- You were missing this line
-      const newEdge = {
+    setEdges((currentEdges) => {
+       const newEdge = {
         id: `e${parentId}-${newNodeId}`,
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
         animated: true,
         type: 'smoothstep',
         style: { stroke: '#1a1a1a', strokeWidth: 2 }, 
-        
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700 },
         labelBgStyle: { fill: '#F9F6C8', stroke: '#1a1a1a', strokeWidth: 1 },
@@ -319,7 +355,11 @@ function GridCanvas() {
       return [...currentEdges, newEdge];
     });
 
-    setCenter(calculatedPos.x + 175, calculatedPos.y + 100, { zoom: 1.1, duration: 1200 });
+    // Zoom to the new, collision-free position
+    // We use a timeout to let React render the node state first
+    setTimeout(() => {
+       setCenter(calculatedPos.x + 190, calculatedPos.y + 100, { zoom: 1, duration: 1000 });
+    }, 100);
 
   }, [setCenter]);
 
