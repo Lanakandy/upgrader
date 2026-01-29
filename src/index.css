@@ -1,20 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-ink: #1a1a1a;
+  --color-paper: #F9F6C8;
+}
+
 body {
-  background-color: #F9F6C8;
-  color: #1a1a1a;
-  overflow: hidden; /* Canvas handles scrolling */
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: 'Crimson Pro', serif;
+  overflow: hidden;
 }
 
-/* Custom Dot Grid Pattern */
+/* --- TEXTURE OVERLAY --- 
+   This adds a static grain to the whole screen, making it feel like physical paper.
+*/
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* --- CUSTOM FONTS & UTILS --- */
+.font-serif { font-family: 'Crimson Pro', serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* --- CUSTOM DOT GRID --- */
 .grid-pattern {
-  background-image: radial-gradient(#d1cfaa 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(#a3a3a3 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
+/* --- EDGE ANIMATION FIX --- */
+/* We create a custom keyframe to march the ants (dashes) */
+@keyframes dash-flow {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-ink);
+  stroke-width: 2px;
+}
+
+/* Target specifically animated edges */
 .react-flow__edge.animated .react-flow__edge-path {
-  animation-duration: 60s !important; /* Very slow, subtle flow */
-  stroke-dasharray: 10; /* Optional: Makes the dashes slightly longer/cleaner */
+  stroke-dasharray: 5; /* Size of the dashes */
+  animation: dash-flow 1s linear infinite; /* Speed of the flow */
+}
+
+/* --- NODE POP-IN ANIMATION --- */
+@keyframes popIn {
+  0% { transform: scale(0.9) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.node-enter-anim {
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
