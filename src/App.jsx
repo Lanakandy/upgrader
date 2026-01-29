@@ -18,6 +18,18 @@ import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
+const playSound = (type) => {
+  const sounds = {
+    click: 'https://cdn.freesound.org/previews/256/256116_3263906-lq.mp3', // Soft click
+    paper: 'https://cdn.freesound.org/previews/162/162482_2970724-lq.mp3', // Paper rustle
+    write: 'https://cdn.freesound.org/previews/240/240905_4303126-lq.mp3', // Typewriter/Scribble
+  };
+  
+  const audio = new Audio(sounds[type]);
+  audio.volume = 0.2; // Keep it subtle
+  audio.play().catch(e => console.log("Audio interaction needed first"));
+};
+
 // --- 1. API SERVICE ---
 const apiCall = async (payload) => {
   try {
@@ -44,6 +56,7 @@ const PaperNode = ({ data, id }) => {
   const [definition, setDefinition] = useState(null);
 
   const handleUpgrade = async (mode, customText = null) => {
+    playSound('write');
     setLoading(true);
     await data.onUpgrade(id, data.text, data.reason, mode, customText);
     setLoading(false);
@@ -58,6 +71,7 @@ const PaperNode = ({ data, id }) => {
   };
 
   const handleWordClick = async (e, word) => {
+    playSound('click');
     e.stopPropagation();
     setDefinition({ word, text: "Analyzing...", nuance: "...", x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
     const result = await apiCall({ text: word, context: data.text, task: 'define' });
@@ -91,10 +105,13 @@ const PaperNode = ({ data, id }) => {
   };
 
   return (
-    <div className="relative group w-[380px]">
-      <div className="absolute top-2 left-2 w-full h-full bg-white border border-ink z-0"></div>
-      <div className="absolute top-1 left-1 w-full h-full bg-white border border-ink z-10"></div>
-      <div className="relative bg-white border border-ink p-6 z-20 transition-all font-serif">
+    <div className="relative group w-[380px] node-enter-anim"> 
+      
+      {/* "Hard Shadow" Effect: Solid block behind the card */}
+      <div className="absolute top-2 left-2 w-full h-full bg-black z-0 transition-transform group-hover:translate-x-1 group-hover:translate-y-1"></div>
+      
+      {/* Main Card */}
+      <div className="relative bg-white border-2 border-ink p-6 z-20 font-serif">
         
         {/* --- HANDLES (UPDATED FOR BIDIRECTIONAL CONNECTIONS) --- */}
         
@@ -115,8 +132,8 @@ const PaperNode = ({ data, id }) => {
         <Handle type="source" id="left-src" position={Position.Left} className="!bg-ink !w-2 !h-2 opacity-0 group-hover:opacity-100" />
 
 
-        <button onClick={handleCopy} className="absolute top-2 right-2 p-1 text-gray-300 hover:text-ink transition-colors">
-          {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+        <button onClick={handleCopy} className="absolute top-2 right-2 p-1 hover:bg-yellow-200 transition-colors border border-transparent hover:border-ink">
+          {copied ? <Check size={14} className="text-ink" /> : <Copy size={14} />}
         </button>
 
         {definition && (
@@ -128,21 +145,22 @@ const PaperNode = ({ data, id }) => {
         )}
         {definition && <div className="fixed inset-0 z-40" onClick={() => setDefinition(null)}></div>}
 
-        <div className="mb-4 text-lg leading-relaxed text-ink pr-4">
+        <div className="mb-4 text-xl leading-relaxed text-ink pr-4 selection:bg-yellow-200">
           {renderTextWithDiff()}
         </div>
         
-        <div className="border-t border-dotted border-ink pt-3">
+        <div className="border-t-2 border-dotted border-ink/20 pt-4 mt-2">
            {loading ? (
-             <div className="flex items-center text-xs font-mono gap-2 py-1">
-               <Loader2 className="animate-spin w-3 h-3" /> PHILOLOGIZING...
+             <div className="flex items-center text-xs font-mono gap-2 py-1 text-gray-500">
+               <Loader2 className="animate-spin w-3 h-3" /> ANALYZING TEXTURE...
              </div>
            ) : showCustom ? (
+             // ... Custom Input Logic ...
              <div className="flex gap-2">
                <input 
                  autoFocus
-                 className="flex-1 bg-gray-50 border border-ink px-2 py-1 text-xs font-mono focus:outline-none"
-                 placeholder="e.g. Make it sarcastic..."
+                 className="flex-1 bg-gray-50 border-b-2 border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
+                 placeholder="Prompt..."
                  value={customPrompt}
                  onChange={e => setCustomPrompt(e.target.value)}
                  onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
@@ -152,11 +170,11 @@ const PaperNode = ({ data, id }) => {
              </div>
            ) : (
              <div className="flex gap-2 flex-wrap">
-               <button onClick={() => handleUpgrade('sophisticate')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↑ ELEVATE</button>
-               <button onClick={() => handleUpgrade('simplify')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">↓ GROUND</button>
-               <button onClick={() => handleUpgrade('emotional')} className="px-2 py-1 bg-grid-bg border border-ink text-xs font-mono hover:bg-yellow-200 transition-colors">→ EMOTION</button>
-               <button onClick={() => setShowCustom(true)} className="px-2 py-1 bg-white border border-ink border-dashed text-xs font-mono hover:bg-gray-50 transition-colors flex items-center gap-1">
-                 <ArrowLeft size={10}/> CUSTOM
+               <button onClick={() => handleUpgrade('sophisticate')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↑ Elevate</button>
+               <button onClick={() => handleUpgrade('simplify')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↓ Ground</button>
+               <button onClick={() => handleUpgrade('emotional')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">→ Emotion</button>
+               <button onClick={() => setShowCustom(true)} className="px-2 py-1 ml-auto text-ink hover:rotate-90 transition-transform">
+                 <Sparkles size={14}/>
                </button>
              </div>
            )}
@@ -278,23 +296,24 @@ function GridCanvas() {
       return [...currentNodes, newNode];
     });
 
-    setEdges((currentEdges) => {
-       const newEdge = {
+    const newEdge = {
         id: `e${parentId}-${newNodeId}`,
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
+        animated: true, // This triggers the class .react-flow__edge.animated
+        type: 'smoothstep', // Change from 'default' to 'smoothstep' for a more schematic/circuit look
+        // We remove specific style overrides so CSS can handle the stroke dash
+        style: { stroke: '#1a1a1a', strokeWidth: 2 }, 
         
-        animated: true,
-        
-        type: 'default', 
+        // Label Styling
         label: result.reason, 
-        labelStyle: { fill: '#1a1a1a', fontFamily: 'Times New Roman', fontStyle: 'italic', fontSize: 12 },
-        labelBgStyle: { fill: '#F9F6C8', fillOpacity: 0.9, stroke: '#1a1a1a', strokeDasharray: '2,2' },
-        labelBgPadding: [8, 4],
-        labelBgBorderRadius: 10,
-        style: { stroke: '#1a1a1a', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a' },
+        labelStyle: { fill: '#1a1a1a', fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700 },
+        labelBgStyle: { fill: '#F9F6C8', stroke: '#1a1a1a', strokeWidth: 1 },
+        labelBgPadding: [6, 4],
+        labelBgBorderRadius: 0, // Hard corners
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 }, // Larger arrow
       };
+      playSound('paper'); // <--- Sound on new creation
       return [...currentEdges, newEdge];
     });
 
@@ -326,7 +345,7 @@ function GridCanvas() {
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
           {/* Title restored to text only */}
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·i</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridsk·i</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
