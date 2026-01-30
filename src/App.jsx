@@ -454,13 +454,17 @@ const handleRestart = () => {
     <div className="w-screen h-screen font-serif text-ink relative">
       
       {/* HEADER */}
-      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
-        <div>
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
-          <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
-             {nodes.length} NODES CREATED
-          </p>
- {hasStarted && (
+<div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
+  {/* Left Side: Title and Stats/Restart */}
+  <div className="flex flex-col gap-1 items-start">
+    <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
+    
+    <div className="flex gap-2 pointer-events-auto">
+      <p className="font-mono text-xs bg-white border border-ink inline-block px-2 py-1">
+        {nodes.length} NODES CREATED
+      </p>
+      
+      {hasStarted && (
         <button 
           onClick={handleRestart}
           className="bg-white border border-ink px-2 py-1 font-mono text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1"
@@ -470,21 +474,25 @@ const handleRestart = () => {
       )}
     </div>
   </div>
-       
-        <button onClick={handleDownload} className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" title="Download Snapshot">
-          <Camera size={20} />
-        </button>
-      </div>
 
-      {/* LOGO */}
-      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
-        <img 
-          src="/logo.png" 
-          alt="Gridscape Logo" 
-          className="h-16 w-auto object-contain" 
-        />
-      </div>
+  {/* Right Side: Download Button */}
+  <button 
+    onClick={handleDownload} 
+    className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" 
+    title="Download Snapshot"
+  >
+    <Camera size={20} />
+  </button>
+</div>
 
+{/* LOGO (Bottom Right) */}
+<div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
+  <img 
+    src="/logo.png" 
+    alt="Gridscape Logo" 
+    className="h-16 w-auto object-contain" 
+  />
+</div>
       {/* START SCREEN */}
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
