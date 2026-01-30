@@ -448,10 +448,10 @@ function GridCanvas() {
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
-            <h2 className="text-2xl mb-4">Plant your seed.</h2>
+            <h2 className="text-2xl mb-4">Let’s build from here.</h2>
             <textarea
               className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-4 bg-gray-50"
-              placeholder="Type a phrase you want to evolve... e.g. 'I am very hungry'"
+              placeholder="Type your phrase... e.g. 'I am very hungry'"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             />
@@ -460,7 +460,7 @@ function GridCanvas() {
               disabled={!inputText}
               className="w-full bg-ink text-white py-3 font-mono hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              INITIALIZE GRID <ArrowRight size={16}/>
+              PLACE ON GRID <ArrowRight size={16}/>
             </button>
           </div>
         </div>
