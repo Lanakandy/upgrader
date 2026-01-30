@@ -57,9 +57,6 @@ const PaperNode = ({ data, id }) => {
   const [definition, setDefinition] = useState(null);
   
   // State for Elevation Level
-  // 1: Proficiency (Paraphrase)
-  // 2: Register (Formal)
-  // 3: Expansion (Nuance)
   const [level, setLevel] = useState(data.initialLevel || 1); 
 
   const handleUpgrade = async (mode, customText = null) => {
@@ -222,7 +219,7 @@ const PaperNode = ({ data, id }) => {
                   {/* Custom Button (Labeled) */}
                   <button onClick={() => setShowCustom(true)} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5 flex items-center justify-center gap-2">
                    → Custom
-                      </button>
+                  </button>
                </div>
              </div>
            )}
@@ -408,9 +405,7 @@ function GridCanvas() {
     });
 
     // Zoom to new node (Center logic remains same)
-    // ... we need calculatedPos here, but it's inside setNodes scope. 
-    // To make zoom work perfectly with collision, we usually approximate or move this logic.
-    // However, for visual drift, simply zooming to parent + offset is usually fine:
+    // Zoom logic adjusted for drift
     const approxX = (dx) + (getNodes().find(n => n.id === parentId)?.position.x || 0);
     const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
 
@@ -464,7 +459,6 @@ function GridCanvas() {
 
       {/* START SCREEN */}
       {!hasStarted && (
-        {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
             
@@ -499,11 +493,12 @@ function GridCanvas() {
               disabled={!inputText || inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40}
               className="w-full bg-ink text-white py-4 font-mono text-sm tracking-widest hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:translate-y-1"
             >
-              PLACE ON GRID <ArrowRight size={16}/>
+              PLOT VECTORS <ArrowRight size={16}/>
             </button>
           </div>
         </div>
       )}
+
       <ReactFlow
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
