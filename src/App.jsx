@@ -159,7 +159,7 @@ const PaperNode = ({ data, id }) => {
         <div className="border-t border-dotted border-ink/30 pt-4 mt-2">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2 py-1 text-gray-500">
-               <Loader2 className="animate-spin w-3 h-3" /> PHILOLOGIZING...
+               <Loader2 className="animate-spin w-3 h-3" /> gridsk·ai...
              </div>
            ) : showCustom ? (
              <div className="flex flex-col gap-2 animate-in fade-in duration-200">
