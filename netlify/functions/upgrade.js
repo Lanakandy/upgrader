@@ -6,11 +6,9 @@ export default async (req, context) => {
 
   const MODEL_CASCADE = [
     "arcee-ai/trinity-large-preview:free", 
-    "google/gemma-3-12b-it:free", 
+    "openai/gpt-4o-mini", 
     "tngtech/deepseek-r1t2-chimera:free",
-    "google/gemini-2.0-flash-exp:free",        
-    "openai/gpt-4o-mini"           
-     
+                    
   ];
 
     try {
@@ -73,17 +71,21 @@ export default async (req, context) => {
     }
 
     // --- WATERFALL EXECUTION ---
-    let lastError = null;
+     let lastError = null;
     for (const model of MODEL_CASCADE) {
       try {
+        // Create a controller to kill the request after 4 seconds
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per model
+
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://gridscape.netlify.app",
-            "X-Title": "Gridscape"
+            "X-Title": "Gridskai"
           },
+          signal: controller.signal, // Connect the abort controller
           body: JSON.stringify({
             "model": model,
             "messages": [
@@ -95,13 +97,20 @@ export default async (req, context) => {
           })
         });
 
-        if (!response.ok) throw new Error(response.status);
+        clearTimeout(timeoutId); // Clear timeout if successful
+
+        if (!response.ok) throw new Error(`Status ${response.status}`);
         const data = await response.json();
         if (!data.choices?.[0]?.message?.content) throw new Error("Empty response");
         return new Response(JSON.stringify(data), { status: 200 });
 
       } catch (error) {
+        // If it was our own timeout, log it specifically
+        if (error.name === 'AbortError') {
+            console.log(`Skipping ${model} due to timeout`);
+        }
         lastError = error;
+        // The loop naturally continues to the next model
       }
     }
     throw new Error(lastError?.message);
