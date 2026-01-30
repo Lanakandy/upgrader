@@ -26,8 +26,10 @@ export default async (req, context) => {
       
       RULES:
       1. PRESERVE MEANING: Do not change the core truth (unless asking for expansion).
-      2. REASON: Explain the linguistic shift (e.g. "Upgraded to C1 vocabulary", "Added sensory detail").
-      `;
+      2. REASON: A brief, technical explanation of the change. 
+     - STRICT LIMIT: Maximum 12 words. 
+     - FORMAT: Use a "Verb: Description" style (e.g., "Elevated: Swapped generic verbs for sensory imagery").
+  `;
       
       // --- NEW LADDER LOGIC ---
       const sophisticatePrompts = {
