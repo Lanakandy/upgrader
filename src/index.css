@@ -42,6 +42,20 @@ body::after {
   background-size: 20px 20px;
 }
 
+.react-flow__edge-label {
+  /* This targets the container of the label on the lines */
+  max-width: 250px !important; /* Forces the text to stack instead of sprawl */
+  white-space: normal !important; /* Allows line breaks */
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Optional: Add some padding to the internal text so it doesn't touch the borders */
+.react-flow__edge-label div {
+  padding: 4px 8px;
+  line-height: 1.2;
+}
+
 /* --- EDGE ANIMATION FIX --- */
 /* We create a custom keyframe to march the ants (dashes) */
 @keyframes dash-flow {
