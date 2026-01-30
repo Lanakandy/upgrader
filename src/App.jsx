@@ -462,7 +462,7 @@ function GridCanvas() {
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
             
-            <h2 className="text-3xl font-serif mb-6 tracking-tight">Set the Origin.</h2>
+            <h2 className="text-3xl font-serif mb-6 tracking-tight">Let's build from here</h2>
             
             <div className="relative">
               <textarea
@@ -493,7 +493,7 @@ function GridCanvas() {
               disabled={!inputText || inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40}
               className="w-full bg-ink text-white py-4 font-mono text-sm tracking-widest hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:translate-y-1"
             >
-              PLOT VECTORS <ArrowRight size={16}/>
+              PLACE ON GRID <ArrowRight size={16}/>
             </button>
           </div>
         </div>
