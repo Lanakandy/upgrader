@@ -14,7 +14,7 @@ import {
   getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, RotateCcw } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
@@ -239,6 +239,16 @@ function GridCanvas() {
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
 
+const handleRestart = () => {
+  if (window.confirm("Start a new grid? This will delete all current nodes.")) {
+    setNodes([]);
+    setEdges([]);
+    setHasStarted(false);
+    setInputText(''); // Clears the input for a fresh start
+    playSound('paper');
+  }
+};
+
   const handleDownload = () => {
     const nodesBounds = getNodesBounds(getNodes());
     if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
@@ -450,7 +460,17 @@ function GridCanvas() {
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
-        </div>
+ {hasStarted && (
+        <button 
+          onClick={handleRestart}
+          className="bg-white border border-ink px-2 py-1 font-mono text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1"
+        >
+          <RotateCcw size={12} /> NEW GRID
+        </button>
+      )}
+    </div>
+  </div>
+       
         <button onClick={handleDownload} className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" title="Download Snapshot">
           <Camera size={20} />
         </button>
