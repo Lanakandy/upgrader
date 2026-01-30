@@ -60,7 +60,7 @@ const PaperNode = ({ data, id }) => {
   // 1: Proficiency (Paraphrase)
   // 2: Register (Formal)
   // 3: Expansion (Nuance)
-  const [level, setLevel] = useState(1); 
+  const [level, setLevel] = useState(data.initialLevel || 1); 
 
   const handleUpgrade = async (mode, customText = null) => {
     playSound('write');
@@ -285,42 +285,50 @@ function GridCanvas() {
     if (!result) return;
 
     const newNodeId = `${Date.now()}`;
-    let sourceHandleId = 'bottom'; 
-    let targetHandleId = 'top';    
-    let calculatedPos = { x: 0, y: 0 };
-
-    // Spacing configuration
-    const VERTICAL_GAP = 400;
-    const HORIZONTAL_GAP = 900; 
+    
+    // Default Handles
+    let sourceHandleId = 'top-src'; 
+    let targetHandleId = 'bottom-tgt';    
+    
+    // SPACING CONFIG
+    const VERTICAL_GAP = 450;   
+    const HORIZONTAL_GAP = 700; 
     const NODE_WIDTH = 400;     
     const NODE_HEIGHT = 250;    
 
-    // Direction Logic
+    // RANDOM "DRIFT" (This creates the organic feel)
+    // We add a random number between -100 and 100 to prevent straight lines
+    const driftX = (Math.random() * 200) - 100; 
+    const driftY = (Math.random() * 100) - 50;
+
     let dx = 0; 
     let dy = 0;
     let directionType = 'vertical';
 
     switch (mode) {
-      case 'sophisticate': // UP
+      case 'sophisticate': // UP + DRIFT
         dy = -VERTICAL_GAP; 
+        dx = driftX; // Add the horizontal wobble
         sourceHandleId = 'top-src'; targetHandleId = 'bottom-tgt'; 
         directionType = 'vertical';
         break;
-      case 'simplify': // DOWN
+        
+      case 'simplify': // DOWN + DRIFT
         dy = VERTICAL_GAP;
+        dx = driftX; // Add the horizontal wobble
         sourceHandleId = 'bottom'; targetHandleId = 'top';
         directionType = 'vertical';
         break;
-      case 'emotional': // RIGHT
+        
+      // CUSTOM / EXPAND -> MOVES RIGHT
+      case 'emotional': 
+      case 'custom': 
         dx = HORIZONTAL_GAP; 
+        dy = driftY; // Add slight vertical wobble
         sourceHandleId = 'right'; targetHandleId = 'left';
         directionType = 'horizontal';
         break;
-      case 'custom': // LEFT
-        dx = -HORIZONTAL_GAP; 
-        sourceHandleId = 'left-src'; targetHandleId = 'right-tgt'; 
-        directionType = 'horizontal';
-        break;
+        
       default:
         dy = VERTICAL_GAP;
     }
@@ -347,7 +355,7 @@ function GridCanvas() {
         if (overlap) {
           shiftCount++;
           if (directionType === 'vertical') {
-             // If vertical movement blocked, shift sideways
+             // If vertical movement blocked, shift sideways significantly
              const sign = shiftCount % 2 === 0 ? -1 : 1;
              candidateX += (NODE_WIDTH * sign * Math.ceil(shiftCount/2));
           } else {
@@ -357,7 +365,7 @@ function GridCanvas() {
         }
       }
 
-      calculatedPos = { x: candidateX, y: candidateY };
+      const calculatedPos = { x: candidateX, y: candidateY };
 
       const newNode = {
         id: newNodeId,
@@ -369,7 +377,8 @@ function GridCanvas() {
           text: result.text, 
           reason: result.reason,
           previousText: parentText,
-          onUpgrade: handleUpgradeRequest 
+          onUpgrade: handleUpgradeRequest,
+          initialLevel: level
         },
       };
       
@@ -382,7 +391,10 @@ function GridCanvas() {
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
         animated: true,
-        type: 'smoothstep',
+        
+        // VISUAL CHANGE: Use 'default' (Bezier curve) instead of 'smoothstep' (Angles)
+        type: 'default', 
+        
         style: { stroke: '#1a1a1a', strokeWidth: 2 }, 
         label: result.reason, 
         labelStyle: { fill: '#1a1a1a', fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700 },
@@ -395,12 +407,18 @@ function GridCanvas() {
       return [...currentEdges, newEdge];
     });
 
-    // Zoom to new node
+    // Zoom to new node (Center logic remains same)
+    // ... we need calculatedPos here, but it's inside setNodes scope. 
+    // To make zoom work perfectly with collision, we usually approximate or move this logic.
+    // However, for visual drift, simply zooming to parent + offset is usually fine:
+    const approxX = (dx) + (getNodes().find(n => n.id === parentId)?.position.x || 0);
+    const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
+
     setTimeout(() => {
-       setCenter(calculatedPos.x + 190, calculatedPos.y + 100, { zoom: 1, duration: 1000 });
+       setCenter(approxX + 190, approxY + 100, { zoom: 1.3, duration: 1200 });
     }, 100);
 
-  }, [setCenter]);
+  }, [setCenter, getNodes]);
 
   const startSession = () => {
     if(!inputText) return;
