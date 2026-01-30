@@ -28,7 +28,7 @@ export default async (req, context) => {
       1. PRESERVE MEANING: Do not change the core truth (unless asking for expansion).
       2. REASON: A brief, technical explanation of the change. 
      - STRICT LIMIT: Maximum 12 words. 
-     - FORMAT: Use a "Verb: Description" style (e.g., "Elevated: Swapped generic verbs for sensory imagery").
+     - FORMAT: Use a "Description" style (e.g., "Swapped generic verbs for sensory imagery").
   `;
       
       // --- NEW LADDER LOGIC ---
