@@ -54,11 +54,15 @@ const PaperNode = ({ data, id }) => {
   const [showCustom, setShowCustom] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [definition, setDefinition] = useState(null);
+  
+  // NEW STATE: Elevation Level (1, 2, or 3)
+  const [level, setLevel] = useState(2); 
 
   const handleUpgrade = async (mode, customText = null) => {
     playSound('write');
     setLoading(true);
-    await data.onUpgrade(id, data.text, data.reason, mode, customText);
+    // PASS LEVEL TO THE HANDLER
+    await data.onUpgrade(id, data.text, data.reason, mode, customText, level);
     setLoading(false);
     setShowCustom(false);
   };
@@ -146,7 +150,7 @@ const PaperNode = ({ data, id }) => {
         <div className="border-t border-dotted border-ink/30 pt-4 mt-2">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2 py-1 text-gray-500">
-               <Loader2 className="animate-spin w-3 h-3" /> ANALYZING TEXTURE...
+               <Loader2 className="animate-spin w-3 h-3" /> COOKING...
              </div>
            ) : showCustom ? (
              <div className="flex gap-2">
@@ -162,7 +166,32 @@ const PaperNode = ({ data, id }) => {
                <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
              </div>
            ) : (
-             <div className="flex gap-2 flex-wrap items-center">
+
+             <div className="flex flex-col gap-3">
+               
+               {/* ROW 1: The Elevation Control */}
+               <div className="flex items-center gap-2">
+                 <button onClick={() => handleUpgrade('sophisticate')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
+                   ↑ Elevate
+                 </button>
+                 
+                 {/* THE LEVEL DIAL */}
+                 <div className="flex border border-ink bg-gray-50">
+                    {[1, 2, 3].map((l) => (
+                      <button 
+                        key={l}
+                        onClick={() => { playSound('click'); setLevel(l); }}
+                        className={`px-2 py-1 text-[9px] font-mono border-r last:border-r-0 border-ink transition-colors ${level === l ? 'bg-ink text-white' : 'text-gray-400 hover:text-ink'}`}
+                        title={l === 1 ? "Polite/Formal" : l === 2 ? "Rich/Vivid" : "Literary/Complex"}
+                      >
+                        {l === 1 ? 'I' : l === 2 ? 'II' : 'III'}
+                      </button>
+                    ))}
+                 </div>
+               </div>
+             
+
+          <div className="flex gap-2">
                <button onClick={() => handleUpgrade('sophisticate')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↑ Elevate</button>
                <button onClick={() => handleUpgrade('simplify')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↓ Ground</button>
                <button onClick={() => handleUpgrade('emotional')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">→ Emotion</button>
@@ -234,10 +263,10 @@ function GridCanvas() {
     }
   };
 
-  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null) => {
+  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null, level = 2) => {
     
-    // 1. Get the content from API
-    const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt });
+    // Pass 'level' to apiCall
+    const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt, level });
     if (!result) return;
 
     const newNodeId = `${Date.now()}`;
@@ -387,7 +416,7 @@ function GridCanvas() {
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
           {/* Title restored to text only */}
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">Gridsk·i</h1>
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
           </p>
