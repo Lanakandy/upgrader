@@ -56,16 +56,19 @@ const PaperNode = ({ data, id }) => {
   const [customPrompt, setCustomPrompt] = useState("");
   const [definition, setDefinition] = useState(null);
   
-  // State for Elevation Level (1=Formal, 2=Rich, 3=Literary)
-  const [level, setLevel] = useState(2); 
+  // State for Elevation Level
+  // 1: Proficiency (Paraphrase)
+  // 2: Register (Formal)
+  // 3: Expansion (Nuance)
+  const [level, setLevel] = useState(1); 
 
   const handleUpgrade = async (mode, customText = null) => {
     playSound('write');
     setLoading(true);
-    // Pass 'level' to the handler
     await data.onUpgrade(id, data.text, data.reason, mode, customText, level);
     setLoading(false);
     setShowCustom(false);
+    setCustomPrompt(""); // Reset custom input
   };
 
   const handleCopy = (e) => {
@@ -109,6 +112,14 @@ const PaperNode = ({ data, id }) => {
     });
   };
 
+  // PRESETS FOR CUSTOM MODE
+  const CUSTOM_PRESETS = [
+    "Sarcastic",
+    "Conversational",
+    "Journalistic",
+    "Scientific"
+  ];
+
   return (
     <div className="relative group w-[380px] node-enter-anim"> 
       
@@ -121,13 +132,10 @@ const PaperNode = ({ data, id }) => {
         {/* --- HANDLES --- */}
         <Handle type="target" id="top" position={Position.Top} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Handle type="source" id="top-src" position={Position.Top} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        
         <Handle type="source" id="bottom" position={Position.Bottom} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Handle type="target" id="bottom-tgt" position={Position.Bottom} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        
         <Handle type="source" id="right" position={Position.Right} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Handle type="target" id="right-tgt" position={Position.Right} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-
         <Handle type="target" id="left" position={Position.Left} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Handle type="source" id="left-src" position={Position.Left} className="!bg-ink !w-1.5 !h-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -151,20 +159,35 @@ const PaperNode = ({ data, id }) => {
         <div className="border-t border-dotted border-ink/30 pt-4 mt-2">
            {loading ? (
              <div className="flex items-center text-xs font-mono gap-2 py-1 text-gray-500">
-               <Loader2 className="animate-spin w-3 h-3" /> COOKING...
+               <Loader2 className="animate-spin w-3 h-3" /> PHILOLOGIZING...
              </div>
            ) : showCustom ? (
-             <div className="flex gap-2">
-               <input 
-                 autoFocus
-                 className="flex-1 bg-gray-50 border-b border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
-                 placeholder="Prompt..."
-                 value={customPrompt}
-                 onChange={e => setCustomPrompt(e.target.value)}
-                 onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
-               />
-               <button onClick={() => handleUpgrade('custom', customPrompt)} className="px-2 bg-ink text-white text-xs hover:bg-gray-700 font-mono">GO</button>
-               <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
+             <div className="flex flex-col gap-2 animate-in fade-in duration-200">
+               <div className="flex gap-2">
+                 <input 
+                   autoFocus
+                   className="flex-1 bg-gray-50 border-b border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
+                   placeholder="e.g. Make it pirate speak..."
+                   value={customPrompt}
+                   onChange={e => setCustomPrompt(e.target.value)}
+                   onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
+                 />
+                 <button onClick={() => handleUpgrade('custom', customPrompt)} className="px-2 bg-ink text-white text-xs hover:bg-gray-700 font-mono">GO</button>
+                 <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
+               </div>
+               
+               {/* PRESET CHIPS */}
+               <div className="flex flex-wrap gap-2">
+                 {CUSTOM_PRESETS.map(preset => (
+                    <button 
+                      key={preset}
+                      onClick={() => handleUpgrade('custom', `Make it ${preset}`)}
+                      className="px-2 py-0.5 bg-gray-100 border border-gray-300 text-[9px] font-mono hover:bg-ink hover:text-white hover:border-ink transition-colors"
+                    >
+                      {preset}
+                    </button>
+                 ))}
+               </div>
              </div>
            ) : (
              <div className="flex flex-col gap-3">
@@ -182,7 +205,7 @@ const PaperNode = ({ data, id }) => {
                         key={l}
                         onClick={() => { playSound('click'); setLevel(l); }}
                         className={`px-2 py-1 text-[9px] font-mono border-r last:border-r-0 border-ink transition-colors ${level === l ? 'bg-ink text-white' : 'text-gray-400 hover:text-ink'}`}
-                        title={l === 1 ? "Polite/Formal" : l === 2 ? "Rich/Vivid" : "Literary/Complex"}
+                        title={l === 1 ? "Proficiency (B2/C1)" : l === 2 ? "Register (Formal)" : "Expansion (Nuance)"}
                       >
                         {l === 1 ? 'I' : l === 2 ? 'II' : 'III'}
                       </button>
@@ -190,25 +213,16 @@ const PaperNode = ({ data, id }) => {
                  </div>
                </div>
 
-               {/* ROW 2: Ground, Expand, Custom */}
+               {/* ROW 2: Ground & Custom */}
                <div className="flex gap-2">
                   <button onClick={() => handleUpgrade('simplify')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
                     ↓ Ground
                   </button>
-                  <button onClick={() => handleUpgrade('emotional')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
-                    → Expand
-                  </button>
-               
-                  {/* Custom Button with Tooltip */}
-                  <button 
-                      onClick={() => setShowCustom(true)} 
-                      className="relative group/btn px-2 py-1 text-ink hover:bg-yellow-200 transition-colors border border-transparent hover:border-ink"
-                  >
-                      <Sparkles size={14} className="transition-transform duration-300 group-hover/btn:rotate-90"/>
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap bg-ink text-white text-[10px] font-mono font-bold px-2 py-1 z-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-                        CUSTOM PROMPT
-                      </div>
-                  </button>
+                  
+                  {/* Custom Button (Labeled) */}
+                  <button onClick={() => setShowCustom(true)} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5 flex items-center justify-center gap-2">
+                    <Sparkles size={10} /> Custom
+                      </button>
                </div>
              </div>
            )}
@@ -277,7 +291,7 @@ function GridCanvas() {
 
     // Spacing configuration
     const VERTICAL_GAP = 400;
-    const HORIZONTAL_GAP = 600; 
+    const HORIZONTAL_GAP = 900; 
     const NODE_WIDTH = 400;     
     const NODE_HEIGHT = 250;    
 
