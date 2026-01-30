@@ -388,18 +388,26 @@ function GridCanvas() {
         source: parentId, target: newNodeId,
         sourceHandle: sourceHandleId, targetHandle: targetHandleId,
         animated: true,
-        
-        // VISUAL CHANGE: Use 'default' (Bezier curve) instead of 'smoothstep' (Angles)
         type: 'default', 
         
         style: { stroke: '#1a1a1a', strokeWidth: 2 }, 
         label: result.reason, 
-        labelStyle: { fill: '#1a1a1a', fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700 },
-        labelBgStyle: { fill: '#F9F6C8', stroke: '#1a1a1a', strokeWidth: 1 },
-        labelBgPadding: [6, 4],
-        labelBgBorderRadius: 0,
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 },
-      };
+  labelStyle: { 
+    fill: '#1a1a1a', 
+    fontFamily: 'JetBrains Mono', 
+    fontSize: 10, 
+    fontWeight: 700,
+    width: 200, // Explicitly tell React Flow the intended width
+  },
+  labelBgStyle: { 
+    fill: '#F9F6C8', 
+    stroke: '#1a1a1a', 
+    strokeWidth: 1,
+  },
+  labelBgPadding: [8, 6], // Increased padding for better readability
+  labelBgBorderRadius: 0,
+  markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 },
+};
       playSound('paper');
       return [...currentEdges, newEdge];
     });
