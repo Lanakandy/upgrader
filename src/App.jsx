@@ -18,6 +18,7 @@ import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X } from
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
+// --- SOUND ENGINE ---
 const playSound = (type) => {
   const sounds = {
     click: '/soft_click.wav',
@@ -26,11 +27,11 @@ const playSound = (type) => {
   };
   
   const audio = new Audio(sounds[type]);
-  audio.volume = 0.3; // Adjusted volume slightly for local files
+  audio.volume = 0.3; 
   audio.play().catch(e => console.log("Audio interaction needed first"));
 };
 
-// --- 1. API SERVICE ---
+// --- API SERVICE ---
 const apiCall = async (payload) => {
   try {
     const response = await fetch("/.netlify/functions/upgrade", {
@@ -47,7 +48,7 @@ const apiCall = async (payload) => {
   }
 };
 
-// --- 2. PAPER NODE COMPONENT ---
+// --- PAPER NODE COMPONENT ---
 const PaperNode = ({ data, id }) => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -55,13 +56,13 @@ const PaperNode = ({ data, id }) => {
   const [customPrompt, setCustomPrompt] = useState("");
   const [definition, setDefinition] = useState(null);
   
-  // NEW STATE: Elevation Level (1, 2, or 3)
+  // State for Elevation Level (1=Formal, 2=Rich, 3=Literary)
   const [level, setLevel] = useState(2); 
 
   const handleUpgrade = async (mode, customText = null) => {
     playSound('write');
     setLoading(true);
-    // PASS LEVEL TO THE HANDLER
+    // Pass 'level' to the handler
     await data.onUpgrade(id, data.text, data.reason, mode, customText, level);
     setLoading(false);
     setShowCustom(false);
@@ -166,10 +167,9 @@ const PaperNode = ({ data, id }) => {
                <button onClick={() => setShowCustom(false)} className="px-1 text-ink hover:bg-red-100"><X size={14}/></button>
              </div>
            ) : (
-
              <div className="flex flex-col gap-3">
                
-               {/* ROW 1: The Elevation Control */}
+               {/* ROW 1: The Elevation Control (Elevate + Dial) */}
                <div className="flex items-center gap-2">
                  <button onClick={() => handleUpgrade('sophisticate')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
                    ↑ Elevate
@@ -189,25 +189,27 @@ const PaperNode = ({ data, id }) => {
                     ))}
                  </div>
                </div>
-             
 
-          <div className="flex gap-2">
-               <button onClick={() => handleUpgrade('sophisticate')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↑ Elevate</button>
-               <button onClick={() => handleUpgrade('simplify')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">↓ Ground</button>
-               <button onClick={() => handleUpgrade('emotional')} className="px-3 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">→ Emotion</button>
+               {/* ROW 2: Ground, Expand, Custom */}
+               <div className="flex gap-2">
+                  <button onClick={() => handleUpgrade('simplify')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
+                    ↓ Ground
+                  </button>
+                  <button onClick={() => handleUpgrade('emotional')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
+                    → Expand
+                  </button>
                
-               {/* UPDATED CUSTOM BUTTON WITH TOOLTIP */}
-               <button 
-                  onClick={() => setShowCustom(true)} 
-                  className="relative group/btn px-2 py-1 ml-auto text-ink hover:bg-yellow-200 transition-colors"
-                >
-                  <Sparkles size={14} className="transition-transform duration-300 group-hover/btn:rotate-90"/>
-                  
-                  {/* Tooltip */}
-                  <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap bg-ink text-white text-[10px] font-mono font-bold px-2 py-1 z-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-                    CUSTOM PROMPT
-  </div>
-</button>
+                  {/* Custom Button with Tooltip */}
+                  <button 
+                      onClick={() => setShowCustom(true)} 
+                      className="relative group/btn px-2 py-1 text-ink hover:bg-yellow-200 transition-colors border border-transparent hover:border-ink"
+                  >
+                      <Sparkles size={14} className="transition-transform duration-300 group-hover/btn:rotate-90"/>
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap bg-ink text-white text-[10px] font-mono font-bold px-2 py-1 z-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
+                        CUSTOM PROMPT
+                      </div>
+                  </button>
+               </div>
              </div>
            )}
         </div>
@@ -218,7 +220,7 @@ const PaperNode = ({ data, id }) => {
 
 const nodeTypes = { paper: PaperNode };
 
-// --- 3. THE CANVAS LOGIC ---
+// --- CANVAS LOGIC ---
 function GridCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -265,7 +267,6 @@ function GridCanvas() {
 
   const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null, level = 2) => {
     
-    // Pass 'level' to apiCall
     const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt, level });
     if (!result) return;
 
@@ -274,16 +275,16 @@ function GridCanvas() {
     let targetHandleId = 'top';    
     let calculatedPos = { x: 0, y: 0 };
 
-    // 2. Define the ideal spacing
-    const VERTICAL_GAP = 400;   // Reduced slightly to keep things tighter
+    // Spacing configuration
+    const VERTICAL_GAP = 400;
     const HORIZONTAL_GAP = 600; 
-    const NODE_WIDTH = 400;     // Width of node (380) + gap
-    const NODE_HEIGHT = 250;    // Height of node (approx 200) + gap
+    const NODE_WIDTH = 400;     
+    const NODE_HEIGHT = 250;    
 
-    // 3. Determine Direction Vector
+    // Direction Logic
     let dx = 0; 
     let dy = 0;
-    let directionType = 'vertical'; // 'vertical' or 'horizontal'
+    let directionType = 'vertical';
 
     switch (mode) {
       case 'sophisticate': // UP
@@ -314,19 +315,16 @@ function GridCanvas() {
       const parentNode = currentNodes.find(n => n.id === parentId);
       if (!parentNode) return currentNodes;
 
-      // 4. Calculate Initial Proposed Position
+      // Initial Proposal
       let candidateX = parentNode.position.x + dx;
       let candidateY = parentNode.position.y + dy;
 
-      // 5. COLLISION DETECTION LOOP
-      // We check if any existing node is occupying the candidate spot.
-      // If so, we shift the candidate spot until it's free.
+      // Collision Detection
       let overlap = true;
       let shiftCount = 0;
       
       while (overlap) {
         overlap = currentNodes.some(n => {
-          // Check if a node is within a collision box of the candidate
           const xDiff = Math.abs(n.position.x - candidateX);
           const yDiff = Math.abs(n.position.y - candidateY);
           return xDiff < (NODE_WIDTH - 50) && yDiff < (NODE_HEIGHT - 50);
@@ -334,13 +332,12 @@ function GridCanvas() {
 
         if (overlap) {
           shiftCount++;
-          // Strategy: If moving Vertically, shift sideways to avoid overlap.
-          // If moving Horizontally, shift down.
           if (directionType === 'vertical') {
-             // Alternate shifts: Right, then Left, then Right...
+             // If vertical movement blocked, shift sideways
              const sign = shiftCount % 2 === 0 ? -1 : 1;
              candidateX += (NODE_WIDTH * sign * Math.ceil(shiftCount/2));
           } else {
+             // If horizontal movement blocked, shift down
              candidateY += NODE_HEIGHT;
           }
         }
@@ -351,7 +348,7 @@ function GridCanvas() {
       const newNode = {
         id: newNodeId,
         type: 'paper',
-        position: calculatedPos, // Use the collision-free position
+        position: calculatedPos,
         width: 380,
         height: 200,
         data: { 
@@ -384,8 +381,7 @@ function GridCanvas() {
       return [...currentEdges, newEdge];
     });
 
-    // Zoom to the new, collision-free position
-    // We use a timeout to let React render the node state first
+    // Zoom to new node
     setTimeout(() => {
        setCenter(calculatedPos.x + 190, calculatedPos.y + 100, { zoom: 1, duration: 1000 });
     }, 100);
@@ -412,10 +408,9 @@ function GridCanvas() {
   return (
     <div className="w-screen h-screen font-serif text-ink relative">
       
-      {/* HEADER UI (Top Left - Title Only) */}
+      {/* HEADER */}
       <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
         <div>
-          {/* Title restored to text only */}
           <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
           <p className="font-mono text-xs mt-1 bg-white border border-ink inline-block px-2 py-1 pointer-events-auto">
              {nodes.length} NODES CREATED
@@ -426,7 +421,7 @@ function GridCanvas() {
         </button>
       </div>
 
-      {/* LOGO UI (Bottom Right) */}
+      {/* LOGO */}
       <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
         <img 
           src="/logo.png" 
@@ -435,6 +430,7 @@ function GridCanvas() {
         />
       </div>
 
+      {/* START SCREEN */}
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
