@@ -221,7 +221,7 @@ const PaperNode = ({ data, id }) => {
                   
                   {/* Custom Button (Labeled) */}
                   <button onClick={() => setShowCustom(true)} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5 flex items-center justify-center gap-2">
-                    <Sparkles size={10} /> Custom
+                   → Custom
                       </button>
                </div>
              </div>
@@ -464,26 +464,46 @@ function GridCanvas() {
 
       {/* START SCREEN */}
       {!hasStarted && (
+        {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
-            <h2 className="text-2xl mb-4">Let’s build from here.</h2>
-            <textarea
-              className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-4 bg-gray-50"
-              placeholder="Type your phrase... e.g. 'I am very hungry'"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-            />
+            
+            <h2 className="text-3xl font-serif mb-6 tracking-tight">Set the Origin.</h2>
+            
+            <div className="relative">
+              <textarea
+                className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-gray-50 focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic"
+                placeholder="Enter the starting phrase... e.g. 'I am very hungry'"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+              />
+              
+              {/* WORD COUNTER UI */}
+              <div className={`absolute bottom-4 right-4 text-xs font-mono px-2 py-1 bg-white border border-ink ${
+                inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 ? 'text-red-600 border-red-600 bg-red-50' : 'text-gray-400'
+              }`}>
+                {inputText.trim().split(/\s+/).filter(w => w.length > 0).length} / 40 WORDS
+              </div>
+            </div>
+
+            {/* ERROR MESSAGE (Optional, shows if over limit) */}
+            {inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 && (
+              <p className="text-red-600 text-xs font-mono mb-4 text-center">
+                SEED PHRASE TOO LONG. PLEASE SHORTEN.
+              </p>
+            )}
+
             <button 
               onClick={startSession}
-              disabled={!inputText}
-              className="w-full bg-ink text-white py-3 font-mono hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              // Disable if empty OR if word count > 40
+              disabled={!inputText || inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40}
+              className="w-full bg-ink text-white py-4 font-mono text-sm tracking-widest hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:translate-y-1"
             >
               PLACE ON GRID <ArrowRight size={16}/>
             </button>
           </div>
         </div>
       )}
-
       <ReactFlow
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
