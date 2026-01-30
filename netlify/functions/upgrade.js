@@ -13,8 +13,7 @@ export default async (req, context) => {
      
   ];
 
-  try {
-    // Added 'level' to the destructuring
+    try {
     const { text, mode, customPrompt, task, level = 2 } = await req.json();
 
     let systemPrompt = "";
@@ -25,37 +24,36 @@ export default async (req, context) => {
       userMessage = `Define "${text}" in context: "${context}".`;
     } 
     else {
-      systemPrompt = `You are an expert Writing Coach. Return ONLY a JSON object with 'text' and 'reason'.
+      systemPrompt = `You are an expert Applied Linguist and Writing Coach. Return ONLY a JSON object with 'text' and 'reason'.
       
       RULES:
-      1. PRESERVE MEANING: Do not change the core truth.
-      2. REASON: Explain the linguistic shift (e.g. "Used stronger verb", "Added politeness marker").
+      1. PRESERVE MEANING: Do not change the core truth (unless asking for expansion).
+      2. REASON: Explain the linguistic shift (e.g. "Upgraded to C1 vocabulary", "Added sensory detail").
       `;
       
-      // --- LADDER LOGIC ---
+      // --- NEW LADDER LOGIC ---
       const sophisticatePrompts = {
         1: `
-          TARGET: LEVEL 1 - POLISH (Professional/Polite).
-          Goal: Make it sound competent, clear, and slightly more formal. suitable for a workplace email.
-          Constraint: Keep grammar simple. Do not use obscure words.
-          Example: "I'm really hungry" -> "I am feeling quite hungry at the moment."
+          TARGET: LEVEL 1 - PROFICIENCY BOOST (Vocabulary/Grammar).
+          Goal: Keep the register/tone of the original (don't make it overly formal), but upgrade the vocabulary from A2/B1 to B2/C1.
+          Mechanism: Use precise verbs and stronger collocations.
+          Example: "I am really hungry" -> "I am famished." (Direct paraphrase, better word).
         `,
         2: `
-          TARGET: LEVEL 2 - RICH (Expressive/Journalistic).
-          Goal: Use precise vocabulary and strong verbs. CEFR C1 Level.
-          Constraint: Avoid generic words like 'very', 'big', 'good'.
-          Example: "I'm really hungry" -> "I have a ravenous appetite."
+          TARGET: LEVEL 2 - REGISTER SHIFT (Formal/Elevated).
+          Goal: Shift the style to be more sophisticated, academic, or professional. 
+          Mechanism: Use complex syntax (inversion, passive voice where appropriate) and high-register vocabulary.
+          Example: "I am really hungry" -> "I am overcome by a ravenous appetite."
         `,
         3: `
-          TARGET: LEVEL 3 - LITERARY (Academic/Poetic).
-          Goal: Complex syntax, metaphorical language, or high register. CEFR C2 Level.
-          Constraint: Can use inversion or nominalization.
-          Example: "I'm really hungry" -> "A profound hunger has seized me, impossible to ignore."
+          TARGET: LEVEL 3 - EXPANSION (Rich/Atmospheric).
+          Goal: "Show, Don't Tell". Make the sentence richer, more emotional, or more vivid.
+          Mechanism: You may increase the sentence length. Add sensory details or internal monologue.
+          Example: "I am really hungry" -> "A hollow ache settled in my stomach; I hadn't eaten since dawn."
         `
       };
 
       const prompts = {
-        // Use the ladder logic if mode is sophisticate
         'sophisticate': `DIRECTION: ELEVATE. ${sophisticatePrompts[level] || sophisticatePrompts[2]}`,
         
         'simplify': `
@@ -64,11 +62,7 @@ export default async (req, context) => {
           Example: "I am overcome by hunger" -> "I'm starving."
         `,
         
-        'emotional': `
-          DIRECTION: EXPAND (Nuance).
-          Goal: Show, Don't Tell. Add sensory details or context. You may make the sentence longer.
-          Example: "I'm hungry" -> "My stomach gave a hollow rumble; I hadn't eaten since dawn."
-        `,
+        // 'emotional' is removed as a mode, handled by Custom or Level 3
                      
         'custom': `Instruction: ${customPrompt || "Rewrite this."}`
       };
