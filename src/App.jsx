@@ -238,15 +238,20 @@ function GridCanvas() {
   const [inputText, setInputText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
-const handleRestart = () => {
-  if (window.confirm("Start a new grid? This will delete all current nodes.")) {
-    setNodes([]);
-    setEdges([]);
-    setHasStarted(false);
-    setInputText(''); // Clears the input for a fresh start
-    playSound('paper');
-  }
+const triggerRestart = () => {
+  playSound('click');
+  setShowRestartConfirm(true);
+};
+
+const performRestart = () => {
+  setNodes([]);
+  setEdges([]);
+  setHasStarted(false);
+  setInputText('');
+  setShowRestartConfirm(false);
+  playSound('paper');
 };
 
   const handleDownload = () => {
@@ -454,52 +459,43 @@ const handleRestart = () => {
     <div className="w-screen h-screen font-serif text-ink relative">
       
       {/* HEADER */}
-<div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
-  {/* Left Side: Title and Stats/Restart */}
-  <div className="flex flex-col gap-1 items-start">
-    <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
-    
-    <div className="flex gap-2 pointer-events-auto">
-      <p className="font-mono text-xs bg-white border border-ink inline-block px-2 py-1">
-        {nodes.length} NODES CREATED
-      </p>
-      
-      {hasStarted && (
+      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
+        <div className="flex flex-col gap-1 items-start">
+          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
+          <div className="flex gap-2 pointer-events-auto">
+            <p className="font-mono text-xs bg-white border border-ink inline-block px-2 py-1">
+              {nodes.length} NODES CREATED
+            </p>
+            {hasStarted && (
+              <button 
+                onClick={triggerRestart}
+                className="bg-white border border-ink px-2 py-1 font-mono text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1 pointer-events-auto"
+              >
+                <RotateCcw size={12} /> NEW GRID
+              </button>
+            )}
+          </div>
+        </div>
+
         <button 
-          onClick={handleRestart}
-          className="bg-white border border-ink px-2 py-1 font-mono text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1"
+          onClick={handleDownload} 
+          className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" 
+          title="Download Snapshot"
         >
-          <RotateCcw size={12} /> NEW GRID
+          <Camera size={20} />
         </button>
-      )}
-    </div>
-  </div>
+      </div>
 
-  {/* Right Side: Download Button */}
-  <button 
-    onClick={handleDownload} 
-    className="pointer-events-auto bg-white border border-ink p-2 hover:bg-gray-100" 
-    title="Download Snapshot"
-  >
-    <Camera size={20} />
-  </button>
-</div>
+      {/* LOGO (Bottom Right) */}
+      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
+        <img src="/logo.png" alt="Gridscape Logo" className="h-16 w-auto object-contain" />
+      </div>
 
-{/* LOGO (Bottom Right) */}
-<div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
-  <img 
-    src="/logo.png" 
-    alt="Gridscape Logo" 
-    className="h-16 w-auto object-contain" 
-  />
-</div>
-      {/* START SCREEN */}
+      {/* START SCREEN (Only shows if sessions hasn't started) */}
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
-            
             <h2 className="text-3xl font-serif mb-6 tracking-tight">Let's build from here</h2>
-            
             <div className="relative">
               <textarea
                 className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-gray-50 focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic"
@@ -507,8 +503,6 @@ const handleRestart = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
-              
-              {/* WORD COUNTER UI */}
               <div className={`absolute bottom-4 right-4 text-xs font-mono px-2 py-1 bg-white border border-ink ${
                 inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 ? 'text-red-600 border-red-600 bg-red-50' : 'text-gray-400'
               }`}>
@@ -516,16 +510,12 @@ const handleRestart = () => {
               </div>
             </div>
 
-            {/* ERROR MESSAGE (Optional, shows if over limit) */}
             {inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 && (
-              <p className="text-red-600 text-xs font-mono mb-4 text-center">
-                SEED PHRASE TOO LONG. PLEASE SHORTEN.
-              </p>
+              <p className="text-red-600 text-xs font-mono mb-4 text-center">SEED PHRASE TOO LONG. PLEASE SHORTEN.</p>
             )}
 
             <button 
               onClick={startSession}
-              // Disable if empty OR if word count > 40
               disabled={!inputText || inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40}
               className="w-full bg-ink text-white py-4 font-mono text-sm tracking-widest hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:translate-y-1"
             >
@@ -535,6 +525,21 @@ const handleRestart = () => {
         </div>
       )}
 
+      {/* THEMED RESTART CONFIRMATION (Placed outside Start Screen so it can show over the grid) */}
+      {showRestartConfirm && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-grid-bg/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-ink p-8 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] max-w-sm w-full node-enter-anim">
+            <h2 className="text-2xl font-serif mb-2 tracking-tight">Clear the grid?</h2>
+            <p className="font-serif text-gray-600 mb-6 italic">This will permanently remove all your progress and nodes.</p>
+            <div className="flex gap-3">
+              <button onClick={performRestart} className="flex-1 bg-ink text-white py-3 font-mono text-xs tracking-widest hover:bg-red-600 transition-colors uppercase font-bold">Yes, Wipe It</button>
+              <button onClick={() => setShowRestartConfirm(false)} className="flex-1 bg-white border border-ink py-3 font-mono text-xs tracking-widest hover:bg-gray-100 transition-colors uppercase font-bold">Nevermind</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REACT FLOW CANVAS */}
       <ReactFlow
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
