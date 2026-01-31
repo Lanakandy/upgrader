@@ -441,18 +441,22 @@ const performRestart = () => {
   const startSession = () => {
     if(!inputText) return;
     setHasStarted(true);
-    const startX = window.innerWidth / 2 - 190;
-    const startY = 100;
-    
-    setNodes([{
-        id: '1', type: 'paper',
-        position: { x: startX, y: startY },
-        width: 380,
-        height: 200,
-        data: { text: inputText, onUpgrade: handleUpgradeRequest, previousText: null },
-      }]);
-    
+    const startX = 0;
+  const startY = 0;
+  
+  setNodes([{
+      id: '1', type: 'paper',
+      position: { x: startX, y: startY },
+      width: 380,
+      height: 200,
+      data: { text: inputText, onUpgrade: handleUpgradeRequest, previousText: null },
+    }]);
+  
+  // Center on the node at exactly zoom 1.0
+  // Added a tiny timeout to ensure React Flow has registered the node first
+  setTimeout(() => {
     setCenter(startX + 190, startY + 100, { zoom: 1, duration: 800 });
+  }, 50);
   };
 
   return (
@@ -544,7 +548,6 @@ const performRestart = () => {
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        fitView
         className="bg-grid-bg"
       >
         <Background color="#d1cfaa" gap={24} size={1.5} />
