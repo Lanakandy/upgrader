@@ -48,19 +48,21 @@ RULES:
       // SOPHISTICATION INSTRUCTIONS
       // -----------------------------------------------------------
       const sophisticatePrompts = {
-        1: `TARGET: LEVEL 1 — NATIVE NATURAL (The "Un-Translator")
-        Goal: Fix awkward "textbook" phrasing. Make it sound like a regular native speaker.
+        1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Native Speaker") 
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sounds like something a native English speaker
+would naturally say.
         Focus:
-        - Replace non-native collocations (e.g., "have a question" -> "ask a question").
-        - Use contractions.
+        - C1/C2 grammar and vocabulary.
+        - Use native collocations and fixed expressions
+        - Use natural contractions and reductions.
         - Fix literal translations.`,
 
         2: `TARGET: LEVEL 2 — PROFESSIONAL POLISH (The "Executive")
-        Goal: Elevate to a formal, respectful, business-appropriate register.
+        Goal: Elevate to a formal, refined, business-appropriate register.
         Focus:
-        - Nominalization ("decide" -> "reach a decision").
+        - Formal, precise, sophisticated vocabulary.
+        - Complex syntax (fronting, inversion, subordination)
         - Diplomatic hedging.
-        - Precise, sophisticated vocabulary.
         - Avoid archaic/pompous words; keep it modern professional.`,
 
         3: `TARGET: LEVEL 3 — SPOKEN EXPRESSIVE (The "Storyteller")
@@ -68,7 +70,7 @@ RULES:
         Focus:
         - Use native hyperbole ("starving", "wreck").
         - Ground emotions in physical details.
-        - Use dramatic sentence rhythm.
+        - Use dramatic sentence rhythm and word choice.
         - Avoid literary/novelistic prose; keep it conversational.`,
       };
 
@@ -79,10 +81,11 @@ RULES:
 
       if (mode === 'simplify') {
         specificInstruction = `TARGET: SIMPLIFY (The "Straight Talker")
-        Goal: Cut the fluff. Make it punchy, direct, and casual.
+        Goal: Strip the sentence back to how a native speaker would say this casually. Make it punchy, direct, and casual.
         Focus:
         - Anglo-Saxon roots over Latinate.
-        - Phrasal verbs.
+        - Choose concrete words over abstract ones.
+        - Use phrasal verbs.
         - Remove redundancy.`;
       } else if (mode === 'custom') {
         specificInstruction = `TARGET: CUSTOM
