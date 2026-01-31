@@ -18,7 +18,7 @@ import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, Rotat
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
-const GLOBAL_ZOOM = 1.2;
+const GLOBAL_ZOOM = 1.1;
 // --- SOUND ENGINE ---
 const playSound = (type) => {
   const sounds = {
