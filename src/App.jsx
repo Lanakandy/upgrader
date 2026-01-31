@@ -18,7 +18,6 @@ import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, Rotat
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
-const GLOBAL_ZOOM = 1;
 // --- SOUND ENGINE ---
 const playSound = (type) => {
   const sounds = {
@@ -434,7 +433,7 @@ const performRestart = () => {
     const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
 
     setTimeout(() => {
-       setCenter(approxX + 190, approxY + 100, { GLOBAL_ZOOM, duration: 1200 });
+       setCenter(approxX + 190, approxY + 100, { zoom: 1, duration: 1200 });
     }, 100);
 
   }, [setCenter, getNodes]);
@@ -456,7 +455,7 @@ const performRestart = () => {
   // Center on the node at exactly zoom 1.0
   // Added a tiny timeout to ensure React Flow has registered the node first
   setTimeout(() => {
-    setCenter(startX + 190, startY + 100, { GLOBAL_ZOOM, duration: 800 });
+    setCenter(startX + 190, startY + 100, { zoom: 1, duration: 800 });
   }, 50);
   };
 
