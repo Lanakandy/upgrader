@@ -549,6 +549,7 @@ const performRestart = () => {
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
+        fitView
         className="bg-grid-bg"
       >
         <Background color="#d1cfaa" gap={24} size={1.5} />
