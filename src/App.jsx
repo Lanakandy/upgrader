@@ -14,7 +14,7 @@ import {
   getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, RotateCcw } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, RotateCcw, Mic, PenTool } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
@@ -62,10 +62,10 @@ const PaperNode = ({ data, id }) => {
   const handleUpgrade = async (mode, customText = null) => {
     playSound('write');
     setLoading(true);
-    await data.onUpgrade(id, data.text, data.reason, mode, customText, level);
+    await data.onUpgrade(id, data.text, data.reason, mode, customText, level, data.contextMode);
     setLoading(false);
     setShowCustom(false);
-    setCustomPrompt(""); // Reset custom input
+    setCustomPrompt(""); 
   };
 
   const handleCopy = (e) => {
@@ -257,6 +257,7 @@ function GridCanvas() {
   const [hasStarted, setHasStarted] = useState(false);
   const { setCenter, getNodes } = useReactFlow();
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [startMode, setStartMode] = useState('speaking');
 
 const triggerRestart = () => {
   playSound('click');
@@ -302,16 +303,16 @@ const performRestart = () => {
         },
       }).then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = 'upgrade-study-map.png';
+        link.download = 'gridsk·ai-study-map.png';
         link.href = dataUrl;
         link.click();
       });
     }
   };
 
-  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null, level = 2) => {
+  const handleUpgradeRequest = useCallback(async (parentId, parentText, parentReason, mode, customPrompt = null, level = 2, contextMode = 'speaking') => {
     
-    const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt, level });
+    const result = await apiCall({ text: parentText, mode, context: parentReason, customPrompt, level, contextMode });
     if (!result) return;
 
     const newNodeId = `${Date.now()}`;
@@ -408,7 +409,8 @@ const performRestart = () => {
           reason: result.reason,
           previousText: parentText,
           onUpgrade: handleUpgradeRequest,
-          initialLevel: level
+          initialLevel: level,
+          contextMode: contextMode
         },
       };
       
@@ -451,7 +453,7 @@ const performRestart = () => {
     const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
 
     setTimeout(() => {
-       setCenter(approxX + 190, approxY + 100, { zoom: 1.2, duration: 1200 });
+       setCenter(approxX + 190, approxY + 100, { zoom: 1.3, duration: 1200 });
     }, 100);
 
   }, [setCenter, getNodes]);
@@ -459,15 +461,18 @@ const performRestart = () => {
   const startSession = () => {
     if(!inputText) return;
     setHasStarted(true);
-    const startX = 0;
-  const startY = 0;
+    
   
   setNodes([{
       id: '1', type: 'paper',
-      position: { x: startX, y: startY },
-      width: 380,
-      height: 200,
-      data: { text: inputText, onUpgrade: handleUpgradeRequest, previousText: null },
+      position: { x: 0, y: 0 },
+      width: 380, height: 200,
+      data: { 
+          text: inputText, 
+          onUpgrade: handleUpgradeRequest, 
+          previousText: null,
+          contextMode: startMode
+      },
     }]);
   
   // Center on the node at exactly zoom 1.0
@@ -519,12 +524,32 @@ const performRestart = () => {
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
             <h2 className="text-3xl font-serif mb-6 tracking-tight">Let's start from here</h2>
             <div className="relative">
+              
+              {/* CONTEXT TOGGLE */}
+              <div className="flex gap-0 mb-[-1px] relative z-10 ml-1">
+                <button 
+                  onClick={() => setStartMode('speaking')}
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'speaking' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
+                >
+                  <Mic size={14} /> SPEAKING
+                </button>
+                <button 
+                  onClick={() => setStartMode('writing')}
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'writing' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
+                >
+                  <PenTool size={14} /> WRITING
+                </button>
+              </div>
+
+              {/* TEXT AREA */}
               <textarea
-                className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-gray-50 focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic"
-                placeholder="Enter a base phrase... e.g. 'I am very hungry'"
+                className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-white focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic rounded-tl-none"
+                placeholder={startMode === 'speaking' ? "What do you want to say?" : "What do you want to write?"}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
+              
+              {/* WORD COUNT INDICATOR */}
               <div className={`absolute bottom-4 right-4 text-xs font-mono px-2 py-1 bg-white border border-ink ${
                 inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 ? 'text-red-600 border-red-600 bg-red-50' : 'text-gray-400'
               }`}>
@@ -566,7 +591,6 @@ const performRestart = () => {
         nodes={nodes} edges={edges}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        fitView
         className="bg-grid-bg"
       >
         <Background color="#d1cfaa" gap={24} size={1.5} />
