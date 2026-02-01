@@ -130,7 +130,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
   ];
 
   return (
-    <div className="relative group w-[380px] node-enter-anim"> 
+    <div className="relative group w-[480px] node-enter-anim"> 
       
       <div className="relative bg-white border border-ink p-6 z-20 font-serif
                       shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)] 
@@ -323,8 +323,8 @@ const performRestart = () => {
     
     // SPACING CONFIG
     const VERTICAL_GAP = 450;   
-    const HORIZONTAL_GAP = 700; 
-    const NODE_WIDTH = 400;     
+    const HORIZONTAL_GAP = 900; 
+    const NODE_WIDTH = 500;     
     const NODE_HEIGHT = 250;    
 
     // RANDOM "DRIFT" (This creates the organic feel)
@@ -402,7 +402,7 @@ const performRestart = () => {
         id: newNodeId,
         type: 'paper',
         position: calculatedPos,
-        width: 380,
+        width: 480,
         height: 200,
         data: { 
           text: result.text, 
@@ -453,7 +453,7 @@ const performRestart = () => {
     const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
 
     setTimeout(() => {
-       setCenter(approxX + 190, approxY + 100, { zoom: 1.3, duration: 1200 });
+       setCenter(approxX + 240, approxY + 100, { zoom: 1.3, duration: 1200 });
     }, 100);
 
   }, [setCenter, getNodes]);
@@ -466,7 +466,7 @@ const performRestart = () => {
   setNodes([{
       id: '1', type: 'paper',
       position: { x: 0, y: 0 },
-      width: 380, height: 200,
+      width: 480, height: 200,
       data: { 
           text: inputText, 
           onUpgrade: handleUpgradeRequest, 
@@ -478,8 +478,8 @@ const performRestart = () => {
   // Center on the node at exactly zoom 1.0
   // Added a tiny timeout to ensure React Flow has registered the node first
   setTimeout(() => {
-    setCenter(startX + 190, startY + 100, { zoom: 1.2, duration: 800 });
-  }, 50);
+    setCenter(240, 100, { zoom: 1.2, duration: 800 });
+    }, 50);
   };
 
   return (
