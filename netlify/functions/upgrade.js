@@ -12,8 +12,7 @@ export default async (req, context) => {
   ];
 
   try {
-    const { text, mode, customPrompt, task, level = 2 } = await req.json();
-
+    const { text, mode, customPrompt, task, level = 2, contextMode = 'speaking' } = await req.json();
     let systemPrompt = "";
     let userMessage = "";
 
@@ -51,13 +50,16 @@ RULES:
       // -----------------------------------------------------------
       // SOPHISTICATION INSTRUCTIONS
       // -----------------------------------------------------------
-      const sophisticatePrompts = {
+      const contextMode = req.json().contextMode || 'speaking'; 
+
+      const PROMPT_TREE = {
+        speaking: {
         1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
         Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker
 would naturally say.
         Focus:
         - C1/C2 grammar and vocabulary.
-        - Use native collocations and fixed expressions
+        - Use native collocations and fixed expressions.
         - Use natural contractions and reductions.
         - Fix literal translations.`,
 
@@ -76,29 +78,52 @@ would naturally say.
         - Formal, precise, sophisticated vocabulary.
         - Diplomatic hedging ("I think" -> "It would appear that").
         - Tone: Confident, understated authority. Not pompous, just highly literate.`,
-      };
+      },
+        writing: {
+          1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
+        Make it sound like something a native English speaker would naturally write.
+              Focus:
+              - C1/C2 grammar and vocabulary.
+              - Use native written collocations and fixed expressions.
+              - Use standard written forms (less reliance on phrasal verbs).`,
 
+          2: `TARGET: LEVEL 2 — EXPRESSIVE WRITTEN ENGLISH ("Engaging Prose")
+              Goal: Expand the sentence, use interesting, varied writing structure.
+              Focus:
+              - Concrete, grounded detail over vague abstraction.
+              - Vary sentence length to avoid monotony.
+              - Use strong active verbs.
+              - Better transitions between ideas.`,
+
+          3: `TARGET: LEVEL 3 — PROFESSIONAL POLISH (Written)
+              Goal: Elevate to a formal, professional, cultivated written register.
+              Focus:
+              - Sophisticated, "educated" vocabulary.
+              - Nominalization where appropriate for gravity.
+              - Diplomatic and nuanced phrasing.
+              - Subordinate clauses to add nuance and qualification.
+              - No contractions.`,
+        }
+      };
       // -----------------------------------------------------------
       // MODE SELECTION
       // -----------------------------------------------------------
       let specificInstruction = "";
 
+      const targetContext = PROMPT_TREE[contextMode] || PROMPT_TREE['speaking'];
+      const targetPrompt = targetContext[level] || targetContext[2];
+
       if (mode === 'simplify') {
         specificInstruction = `TARGET: SIMPLIFY (The "Straight Talker")
-        Goal: Strip the sentence back to how a native speaker would say this casually. Make it punchy, direct, and casual.
-        Focus:
-        - Anglo-Saxon roots over Latinate.
-        - Choose concrete words over abstract ones.
-        - Use phrasal verbs.
-        - Remove redundancy.`;
+        Goal: Strip the sentence back to how a native speaker would put it. Make it clearer and shorter.
+        Context: ${contextMode === 'writing' ? 'Plain English for reading' : 'Casual, direct speech'}.`;
       } else if (mode === 'custom') {
         specificInstruction = `TARGET: CUSTOM
-        Instruction: ${customPrompt || "Rewrite natively."}`;
+        Instruction: ${customPrompt || "Rewrite appropriately."}`;
       } else {
-        // Default to sophisticate
-        specificInstruction = sophisticatePrompts[level] || sophisticatePrompts[2];
+        specificInstruction = targetPrompt;
       }
-
       // -----------------------------------------------------------
       // ASSEMBLE PROMPT
       // -----------------------------------------------------------
