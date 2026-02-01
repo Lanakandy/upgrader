@@ -6,13 +6,16 @@ export default async (req, context) => {
 
   // DeepSeek R1 and Trinity are great, but ensure fallback to 4o-mini for speed/reliability
   const MODEL_CASCADE = [
-    "arcee-ai/trinity-large-preview:free", 
-    "openai/gpt-4o-mini", 
+    "arcee-ai/trinity-large-preview:free",
+    "openai/gpt-4o-mini",  
     "tngtech/deepseek-r1t2-chimera:free",
   ];
 
   try {
+    // 1. Parse body ONCE here. 
+    // We extract contextMode (which holds 'speaking' or 'writing').
     const { text, mode, customPrompt, task, level = 2, contextMode = 'speaking' } = await req.json();
+    
     let systemPrompt = "";
     let userMessage = "";
 
@@ -26,7 +29,7 @@ export default async (req, context) => {
       - "transcription" (string, IPA format)
       No markdown formatting.`;
       
-      userMessage = `Define "${text}" considering this context: "${context}".`;
+      userMessage = `Define "${text}".`; 
     } 
     // -------------------------------------------------------------
     // 2. REWRITE/UPGRADE MODE
@@ -46,17 +49,14 @@ RULES:
   "reason": "concise linguistic explanation (max 15 words). Focus on flow/tone. Do NOT use the word 'native'."
 }`;
 
-
       // -----------------------------------------------------------
       // SOPHISTICATION INSTRUCTIONS
       // -----------------------------------------------------------
-      const contextMode = req.json().contextMode || 'speaking'; 
-
+      
       const PROMPT_TREE = {
         speaking: {
         1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker
-would naturally say.
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker would naturally say.
         Focus:
         - C1/C2 grammar and vocabulary.
         - Use native collocations and fixed expressions.
@@ -81,8 +81,7 @@ would naturally say.
       },
         writing: {
           1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Make it sound like something a native English speaker would naturally write.
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker would naturally write.
               Focus:
               - C1/C2 grammar and vocabulary.
               - Use native written collocations and fixed expressions.
@@ -141,15 +140,15 @@ If the input is already perfect, return it unchanged but explain why in 'reason'
     for (const model of MODEL_CASCADE) {
       try {
         const controller = new AbortController();
-        // Increased timeout slightly to 5000ms to allow "Thinking" models (DeepSeek) to process
-        const timeoutId = setTimeout(() => controller.abort(), 5000); 
+        // 15 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://gridskai.com", // OpenRouter requires these for rankings
+            "HTTP-Referer": "https://gridskai.com", 
             "X-Title": "Gridskai"
           },
           signal: controller.signal,
@@ -159,7 +158,6 @@ If the input is already perfect, return it unchanged but explain why in 'reason'
               { "role": "system", "content": systemPrompt },
               { "role": "user", "content": userMessage }
             ],
-            // Temperature 0.7 is usually better for JSON structure than 0.85
             "temperature": 0.7, 
             "response_format": { "type": "json_object" } 
           })
@@ -174,20 +172,25 @@ If the input is already perfect, return it unchanged but explain why in 'reason'
         
         if (!content) throw new Error("Empty response");
 
-        // CLEANUP: Some models return markdown blocks (```json ... ```) despite instructions.
-        // We strip them to ensure valid JSON parsing on the frontend.
-        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        // Clean Markdown and Thoughts
+        content = content.replace(/```json/g, '').replace(/```/g, ''); 
+        content = content.replace(/<think>[\s\S]*?<\/think>/g, '');
 
-        // Validating JSON before returning to ensure frontend doesn't crash
+        // Extract JSON block
+        const firstBrace = content.indexOf('{');
+        const lastBrace = content.lastIndexOf('}');
+        
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            content = content.substring(firstBrace, lastBrace + 1);
+        }
+
         try {
             JSON.parse(content);
         } catch (e) {
-            throw new Error("Invalid JSON received from model");
+            console.log(`Model ${model} returned invalid JSON: ${content}`);
+            throw new Error("Invalid JSON received");
         }
 
-        // Return the raw OpenRouter format, but with cleaned content if needed, 
-        // or just construct a simplified response object for your frontend.
-        // Here we return the full structure to maintain compatibility with your current frontend.
         data.choices[0].message.content = content;
         
         return new Response(JSON.stringify(data), { status: 200 });
@@ -202,13 +205,13 @@ If the input is already perfect, return it unchanged but explain why in 'reason'
       }
     }
     
-    // If all models fail
     return new Response(JSON.stringify({ 
         error: "All models failed", 
         details: lastError?.message 
-    }), { status: 500 });
+    }), { status: 502 });
 
   } catch (error) {
+    console.error("Critical Function Error:", error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 };
