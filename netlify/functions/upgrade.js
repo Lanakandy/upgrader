@@ -54,7 +54,8 @@ RULES:
       // -----------------------------------------------------------
       const sophisticatePrompts = {
         1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound natural and idiomatic.
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker
+would naturally say.
         Focus:
         - C1/C2 grammar and vocabulary.
         - Use native collocations and fixed expressions
@@ -62,10 +63,10 @@ RULES:
         - Fix literal translations.`,
 
         2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (The "Storyteller")
-        Goal: Vivid, emotional, casual spoken English.
+        Goal: Expand the sentence using vivid, emotional, casual spoken English.
         Focus:
-        - Use native hyperbole ("starving", "wreck").
-        - Ground emotions in physical details.
+        - Use native hyperbole ("starving", "wreck", "I could eat a horse").
+        - Add texture through specific, grounded details.
         - Use dramatic sentence rhythm and word choice.
         - Avoid literary/novelistic prose; keep it conversational.`,
 
