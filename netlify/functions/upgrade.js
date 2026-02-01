@@ -22,7 +22,10 @@ export default async (req, context) => {
     // -------------------------------------------------------------
     if (task === 'define') {
       systemPrompt = `You are an expert Etymologist. 
-      Output ONLY valid JSON with keys: "definition" (string) and "nuance" (string). 
+      Output ONLY valid JSON with keys: 
+      - "definition" (string)
+      - "transcription" (string, IPA format)
+      - "nuance" (string)
       No markdown formatting.`;
       
       userMessage = `Define "${text}" considering this context: "${context}".`;
@@ -34,44 +37,45 @@ export default async (req, context) => {
       // Base Persona & Output Rules
       systemPrompt = `You are an expert Applied Linguist specializing in Second Language Acquisition.
 
-MISSION: Rewrite the user's text to sound like a specific type of NATIVE English speaker.
+MISSION: Rewrite the user's text to sound idiomatic, natural, and stylistically precise.
 RULES:
 1. Preserve core factual meaning.
-2. NO synonyms swaps. Change structure/phrasing to match native patterns.
-3. OUTPUT FORMAT: valid, raw JSON only. No markdown (no \`\`\`json).
+2. NO synonyms swaps. Change structure/phrasing to match natural patterns.
+3. EXPLANATION STYLE: Focus on specific linguistic improvements (e.g. "more direct," "reduces redundancy," "improves flow"). Do NOT refer to "native speakers." Use "natural" or "standard" instead.
+4. OUTPUT FORMAT: valid, raw JSON only. No markdown (no \`\`\`json).
 {
   "text": "transformed sentence",
-  "reason": "concise linguistic explanation (max 15 words)"
+  "reason": "concise linguistic explanation (max 15 words). Focus on flow/tone. Do NOT use the word 'native'."
 }`;
+
 
       // -----------------------------------------------------------
       // SOPHISTICATION INSTRUCTIONS
       // -----------------------------------------------------------
       const sophisticatePrompts = {
-        1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Native Speaker") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sounds like something a native English speaker
-would naturally say.
+        1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
+        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound natural and idiomatic.
         Focus:
         - C1/C2 grammar and vocabulary.
         - Use native collocations and fixed expressions
         - Use natural contractions and reductions.
         - Fix literal translations.`,
 
-        2: `TARGET: LEVEL 2 — PROFESSIONAL POLISH (The "Executive")
-        Goal: Elevate to a formal, refined, business-appropriate register.
-        Focus:
-        - Formal, precise, sophisticated vocabulary.
-        - Complex syntax (fronting, inversion, subordination)
-        - Diplomatic hedging.
-        - Avoid archaic/pompous words; keep it modern professional.`,
-
-        3: `TARGET: LEVEL 3 — SPOKEN EXPRESSIVE (The "Storyteller")
+        2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (The "Storyteller")
         Goal: Vivid, emotional, casual spoken English.
         Focus:
         - Use native hyperbole ("starving", "wreck").
         - Ground emotions in physical details.
         - Use dramatic sentence rhythm and word choice.
         - Avoid literary/novelistic prose; keep it conversational.`,
+
+        3: `TARGET: LEVEL 3 — PROFESSIONAL POLISH (The "Executive")
+        Goal: Elevate to a refined, cultivated, and prestigious register.
+        Focus:
+        - Use "educated" vocabulary that signals high status, but remains clear.
+        - Formal, precise, sophisticated vocabulary.
+        - Diplomatic hedging ("I think" -> "It would appear that").
+        - Tone: Confident, understated authority. Not pompous, just highly literate.`,
       };
 
       // -----------------------------------------------------------
