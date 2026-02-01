@@ -81,7 +81,6 @@ const PaperNode = ({ data, id }) => {
     setDefinition({ 
       word, 
       text: "Analyzing...", 
-      nuance: "...", 
       transcription: "...", 
       x: e.nativeEvent.offsetX, 
       y: e.nativeEvent.offsetY 
@@ -93,8 +92,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
       setDefinition(prev => ({ 
         ...prev, 
         text: result.definition, 
-        nuance: result.nuance,
-        transcription: result.transcription // Save the new data
+        transcription: result.transcription
       }));
     }
   };
@@ -162,8 +160,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
             </div>
             
             <div className="mb-2 leading-tight">{definition.text}</div>
-            <div className="italic text-gray-400">"{definition.nuance}"</div>
-          </div>
+           </div>
         )}
         {definition && <div className="fixed inset-0 z-40" onClick={() => setDefinition(null)}></div>}
 
