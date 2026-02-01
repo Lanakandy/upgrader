@@ -25,7 +25,6 @@ export default async (req, context) => {
       Output ONLY valid JSON with keys: 
       - "definition" (string)
       - "transcription" (string, IPA format)
-      - "nuance" (string)
       No markdown formatting.`;
       
       userMessage = `Define "${text}" considering this context: "${context}".`;
