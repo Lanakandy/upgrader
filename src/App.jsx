@@ -78,10 +78,24 @@ const PaperNode = ({ data, id }) => {
   const handleWordClick = async (e, word) => {
     playSound('click');
     e.stopPropagation();
-    setDefinition({ word, text: "Analyzing...", nuance: "...", x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-    const result = await apiCall({ text: word, context: data.text, task: 'define' });
+    setDefinition({ 
+      word, 
+      text: "Analyzing...", 
+      nuance: "...", 
+      transcription: "...", 
+      x: e.nativeEvent.offsetX, 
+      y: e.nativeEvent.offsetY 
+    });
+
+const result = await apiCall({ text: word, context: data.text, task: 'define' });
+    
     if (result) {
-      setDefinition(prev => ({ ...prev, text: result.definition, nuance: result.nuance }));
+      setDefinition(prev => ({ 
+        ...prev, 
+        text: result.definition, 
+        nuance: result.nuance,
+        transcription: result.transcription // Save the new data
+      }));
     }
   };
 
@@ -142,7 +156,11 @@ const PaperNode = ({ data, id }) => {
 
         {definition && (
           <div className="absolute z-50 bg-ink text-white p-3 text-xs w-64 shadow-xl -top-24 left-1/2 -translate-x-1/2 pointer-events-none">
-            <div className="font-bold text-yellow-200 mb-1 border-b border-gray-600 pb-1">{definition.word}</div>
+            <div className="font-bold text-yellow-200 mb-1 border-b border-gray-600 pb-1 flex justify-between items-baseline">
+              <span>{definition.word}</span>
+              <span className="font-mono text-[10px] text-gray-400 opacity-80">{definition.transcription}</span>
+            </div>
+            
             <div className="mb-2 leading-tight">{definition.text}</div>
             <div className="italic text-gray-400">"{definition.nuance}"</div>
           </div>
@@ -164,7 +182,7 @@ const PaperNode = ({ data, id }) => {
                  <input 
                    autoFocus
                    className="flex-1 bg-gray-50 border-b border-ink px-2 py-1 text-xs font-mono focus:outline-none focus:bg-yellow-50"
-                   placeholder="e.g. Make it pirate speak..."
+                   placeholder="e.g. Make it punchy..."
                    value={customPrompt}
                    onChange={e => setCustomPrompt(e.target.value)}
                    onKeyDown={e => e.key === 'Enter' && handleUpgrade('custom', customPrompt)}
@@ -202,7 +220,10 @@ const PaperNode = ({ data, id }) => {
                         key={l}
                         onClick={() => { playSound('click'); setLevel(l); }}
                         className={`px-2 py-1 text-[9px] font-mono border-r last:border-r-0 border-ink transition-colors ${level === l ? 'bg-ink text-white' : 'text-gray-400 hover:text-ink'}`}
-                        title={l === 1 ? "Proficiency (B2/C1)" : l === 2 ? "Register (Formal)" : "Expansion (Nuance)"}
+                        title={l === 1 ? "Proficiency" : 
+                          l === 2 ? "Expansion" : 
+                          "Register (Formal)"              
+                        }
                       >
                         {l === 1 ? 'I' : l === 2 ? 'II' : 'III'}
                       </button>
@@ -499,11 +520,11 @@ const performRestart = () => {
       {!hasStarted && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
           <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
-            <h2 className="text-3xl font-serif mb-6 tracking-tight">Let's build from here</h2>
+            <h2 className="text-3xl font-serif mb-6 tracking-tight">Let's start from here</h2>
             <div className="relative">
               <textarea
                 className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-gray-50 focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic"
-                placeholder="Enter the starting phrase... e.g. 'I am very hungry'"
+                placeholder="Enter a base phrase... e.g. 'I am very hungry'"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
