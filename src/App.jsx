@@ -123,7 +123,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
 
   // PRESETS FOR CUSTOM MODE
   const CUSTOM_PRESETS = [
-    "Sarcastic",
+    "Formal",
     "Conversational",
     "Journalistic",
     "Scientific"
