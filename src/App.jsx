@@ -14,7 +14,7 @@ import {
   getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, RotateCcw, Mic, PenTool } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Copy, Check, Camera, Sparkles, X, RotateCcw } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { diffWords } from 'diff';
 
