@@ -528,13 +528,13 @@ const performRestart = () => {
                   onClick={() => setStartMode('speaking')}
                   className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'speaking' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
                 >
-                  <Mic size={14} /> SPEAKING
+                  SPEAKING
                 </button>
                 <button 
                   onClick={() => setStartMode('writing')}
                   className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'writing' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
                 >
-                  <PenTool size={14} /> WRITING
+                  WRITING
                 </button>
               </div>
 
