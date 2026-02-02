@@ -223,6 +223,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
                       </button>
                     ))}
                  </div>
+               </div> 
 
                {/* ROW 2: Ground & Custom */}
                <div className="flex gap-2">
