@@ -129,6 +129,7 @@ ${specificInstruction}
 
 CRITICAL: Return ONLY JSON.
 ALWAYS provide a rewritten version, even if the input is already good. Find a better or alternative way to say it.`;
+    } // <--- THIS BRACE WAS MISSING. IT CLOSES THE ELSE BLOCK.
 
     // --- WATERFALL EXECUTION ---
     let lastError = null;
