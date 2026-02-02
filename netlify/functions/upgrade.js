@@ -12,9 +12,8 @@ export default async (req, context) => {
   ];
 
   try {
-    // 1. Parse body ONCE here. 
-    // We extract contextMode (which holds 'speaking' or 'writing').
-    const { text, mode, customPrompt, task, level = 2, contextMode = 'speaking' } = await req.json();
+    // 1. Parse body ONCE. 
+    const { text, mode, customPrompt, task, level = 1, contextMode = 'speaking' } = await req.json();
     
     let systemPrompt = "";
     let userMessage = "";
@@ -29,24 +28,24 @@ export default async (req, context) => {
       - "transcription" (string, IPA format)
       No markdown formatting.`;
       
-      userMessage = `Define "${text}".`; 
+      // Use contextMode to ensure the definition fits the register
+      userMessage = `Define "${text}". Definition should be appropriate for a ${contextMode} context.`; 
     } 
     // -------------------------------------------------------------
     // 2. REWRITE/UPGRADE MODE
     // -------------------------------------------------------------
     else {
-      // Base Persona & Output Rules
       systemPrompt = `You are an expert Applied Linguist specializing in Second Language Acquisition.
 
 MISSION: Rewrite the user's text to sound idiomatic, natural, and stylistically precise.
 RULES:
 1. Preserve core factual meaning.
-2. NO synonyms swaps. Change structure/phrasing to match natural patterns.
-3. EXPLANATION STYLE: Focus on specific linguistic improvements (e.g. "more direct," "reduces redundancy," "improves flow"). Do NOT refer to "native speakers." Use "natural" or "standard" instead.
-4. OUTPUT FORMAT: valid, raw JSON only. No markdown (no \`\`\`json).
+2. Change structure/phrasing to match natural patterns (Collocations/Idioms).
+3. EXPLANATION STYLE: Focus on specific linguistic improvements. Do NOT refer to "native speakers." Use "natural," "standard," or "proficient" instead.
+4. OUTPUT FORMAT: valid, raw JSON only. No markdown.
 {
   "text": "transformed sentence",
-  "reason": "concise linguistic explanation (max 15 words). Focus on flow/tone. Do NOT use the word 'native'."
+  "reason": "concise linguistic explanation (max 15 words). Focus on flow/tone."
 }`;
 
       // -----------------------------------------------------------
@@ -55,67 +54,63 @@ RULES:
       
       const PROMPT_TREE = {
         speaking: {
-        1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker would naturally say.
-        Focus:
-        - C1/C2 grammar and vocabulary.
-        - Use native collocations and fixed expressions.
-        - Use natural contractions and reductions.
-        - Fix literal translations.`,
+          1: `TARGET: LEVEL 1 — PROFICIENCY & VARIATION
+          Goal: Rewrite the input to reflect C1/C2-level English.
+          Core Instruction:
+          - If simple/intermediate: Upgrade grammar and vocabulary to a native standard.
+          - If ALREADY advanced: You MUST provide a distinct, high-quality alternative phrasing. Do not return the same sentence. Change the specific vocabulary or sentence structure while keeping the same meaning.
+          Focus:
+          - Advanced, idiomatic vocabulary.
+          - Natural contractions and reductions.
+          - Lateral improvements: If the input is "famished", try "starving" or "running on fumes".`,
 
-        2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (The "Storyteller")
-        Goal: Expand the sentence using vivid, emotional, casual spoken English.
-        Focus:
-        - Use native hyperbole ("starving", "wreck", "I could eat a horse").
-        - Add texture through specific, grounded details.
-        - Use dramatic sentence rhythm and word choice.
-        - Avoid literary/novelistic prose; keep it conversational.`,
+          2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (Expansion)
+          Goal: Evolve the sentence by adding nuance, attitude, color, or situational detail. 
+          Core Instruction:
+          - Restructure and slightly expand the sentence to add emotion or context.
+          - Build directly on the original meaning—do not invent unrelated backstory.
+          - Use spoken rhythm (pauses, emphasis) and "flavor" words.
+          Focus:
+          - Expressiveness: Use hyperbole or vivid imagery where appropriate.
+          - Grounding: Add specific details that make the speaker sound present in the moment.
+          - Conversational Flow: Use discourse markers naturally.`
+        },
 
-        3: `TARGET: LEVEL 3 — PROFESSIONAL POLISH (The "Executive")
-        Goal: Elevate to a refined, cultivated, and prestigious register.
-        Focus:
-        - Use "educated" vocabulary that signals high status, but remains clear.
-        - Formal, precise, sophisticated vocabulary.
-        - Diplomatic hedging ("I think" -> "It would appear that").
-        - Tone: Confident, understated authority. Not pompous, just highly literate.`,
-      },
         writing: {
-          1: `TARGET: LEVEL 1 — GRAMMAR AND VOCABULARY UPGRADE ("Natural Flow") 
-        Goal: Upgrade BOTH vocabulary AND structure to C1/C2 levels. Make it sound like something a native English speaker would naturally write.
-              Focus:
-              - C1/C2 grammar and vocabulary.
-              - Use native written collocations and fixed expressions.
-              - Use standard written forms (less reliance on phrasal verbs).`,
+          1: `TARGET: LEVEL 1 — PROFICIENCY & VARIATION
+          Goal: Rewrite the input to reflect C1/C2-level English.
+          Core Instruction:
+          - If simple/intermediate: Upgrade grammar and vocabulary.
+          - If ALREADY advanced: You MUST provide a stylistic alternative. Change the syntax or lexical choice to offer a different "flavor" of high-level writing.
+          Focus:
+          - Precise vocabulary and written collocations.
+          - Improve sentence structure.
+          - Fix literal translations.`,
 
-          2: `TARGET: LEVEL 2 — EXPRESSIVE WRITTEN ENGLISH ("Engaging Prose")
-              Goal: Expand the sentence, use interesting, varied writing structure.
-              Focus:
-              - Concrete, grounded detail over vague abstraction.
-              - Vary sentence length to avoid monotony.
-              - Use strong active verbs.
-              - Better transitions between ideas.`,
-
-          3: `TARGET: LEVEL 3 — PROFESSIONAL POLISH (Written)
-              Goal: Elevate to a formal, professional, cultivated written register.
-              Focus:
-              - Sophisticated, "educated" vocabulary.
-              - Nominalization where appropriate for gravity.
-              - Diplomatic and nuanced phrasing.
-              - Subordinate clauses to add nuance and qualification.
-              - No contractions.`,
+          2: `TARGET: LEVEL 2 — EXPRESSIVE WRITTEN ENGLISH (Expansion)
+          Goal: Expand the sentence slightly to add nuance, emphasis, or clarifying detail.
+          Core Instruction:
+          - Use measured structural elaboration (modifiers, subordinate clauses, appositives).
+          - Introduce implication or depth that a skilled writer would include.
+          - Keep additions relevant and proportional (don't over-write).
+          Focus:
+          - Sophisticated syntax (using subordination to show relationships between ideas).
+          - Precision: Replace general verbs with specific, evocative ones.
+          - Polished tone.`
         }
       };
+
       // -----------------------------------------------------------
       // MODE SELECTION
       // -----------------------------------------------------------
       let specificInstruction = "";
 
       const targetContext = PROMPT_TREE[contextMode] || PROMPT_TREE['speaking'];
-      const targetPrompt = targetContext[level] || targetContext[2];
+      const targetPrompt = targetContext[level] || targetContext[1];
 
       if (mode === 'simplify') {
         specificInstruction = `TARGET: SIMPLIFY (The "Straight Talker")
-        Goal: Strip the sentence back to how a native speaker would put it. Make it clearer and shorter.
+        Goal: Strip the sentence back to how a proficient speaker would put it simply. Make it clearer and shorter.
         Context: ${contextMode === 'writing' ? 'Plain English for reading' : 'Casual, direct speech'}.`;
       } else if (mode === 'custom') {
         specificInstruction = `TARGET: CUSTOM
@@ -123,16 +118,17 @@ RULES:
       } else {
         specificInstruction = targetPrompt;
       }
+
       // -----------------------------------------------------------
       // ASSEMBLE PROMPT
       // -----------------------------------------------------------
+      // UPDATED: Removed the instruction to "return unchanged if perfect"
       userMessage = `INPUT TEXT: "${text}"
 
 ${specificInstruction}
 
 CRITICAL: Return ONLY JSON.
-If the input is already perfect, return it unchanged but explain why in 'reason'.`;
-    }
+ALWAYS provide a rewritten version, even if the input is already good. Find a better or alternative way to say it.`;
 
     // --- WATERFALL EXECUTION ---
     let lastError = null;
