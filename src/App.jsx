@@ -212,21 +212,17 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
                  
                  {/* THE LEVEL DIAL */}
                  <div className="flex border border-ink bg-gray-50">
-                    {[1, 2, 3].map((l) => (
+                    {[1, 2].map((l) => (
                       <button 
                         key={l}
                         onClick={() => { playSound('click'); setLevel(l); }}
                         className={`px-2 py-1 text-[9px] font-mono border-r last:border-r-0 border-ink transition-colors ${level === l ? 'bg-ink text-white' : 'text-gray-400 hover:text-ink'}`}
-                        title={l === 1 ? "Proficiency" : 
-                          l === 2 ? "Expansion" : 
-                          "Register (Formal)"              
-                        }
+                        title={l === 1 ? "Proficiency" : "Expansion"}
                       >
-                        {l === 1 ? 'I' : l === 2 ? 'II' : 'III'}
+                        {l === 1 ? 'I' : 'II'}
                       </button>
                     ))}
                  </div>
-               </div>
 
                {/* ROW 2: Ground & Custom */}
                <div className="flex gap-2">
