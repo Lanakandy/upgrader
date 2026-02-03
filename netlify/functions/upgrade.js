@@ -40,7 +40,7 @@ export default async (req, context) => {
 MISSION: Rewrite the user's text to sound idiomatic, natural, and stylistically precise.
 RULES:
 1. Preserve core factual meaning.
-2. Change structure/phrasing to match native proficiency (C1/C2 grammar and vocabulary) and natural patterns (Collocations/Idioms).
+2. Change structure/phrasing to match native proficiency (C1/C2 grammar and vocabulary).
 3. EXPLANATION STYLE: Focus on specific linguistic improvements. Do NOT refer to "native speakers." Use "natural," "standard," or "proficient" instead.
 4. OUTPUT FORMAT: valid, raw JSON only. No markdown.
 {
@@ -101,45 +101,47 @@ RULES:
       };
 
       // -----------------------------------------------------------
-      // MODE SELECTION
+      // CUSTOM PERSONA DEFINITIONS
       // -----------------------------------------------------------
       const CUSTOM_PERSONAS = {
         "The Diplomat": `TARGET: THE DIPLOMAT (The Politician)
-        Style: Sophisticated, evasive, and incredibly smooth.
+        Style: Sophisticated, evasive, and excessively polite.
         Linguistic Focus: 
-        - Swap "I" for "we".
-        - Use passive voice to deflect direct blame.
-        - Master the art of "hedging" (use words like 'perhaps', 'potentially', 'under certain circumstances').
-        - Never say a direct "no"; dilute the negative.`,
+        - Swap "I" for "we" to dilute responsibility.
+        - Use passive voice to deflect direct need or blame.
+        - Master "hedging" (use words like 'perhaps', 'it would appear', 'potentially').
+        - Never state a direct need; frame it as a "collective priority" or "circumstantial requirement."`,
 
-        "The Disruptor": `TARGET: THE DISRUPTOR (Silicon Valley Entrepreneur)
-        Style: High-energy, forward-thinking, saturated with tech-speak.
+        "The Disruptor": `TARGET: THE DISRUPTOR (Silicon Valley Tech)
+        Style: High-energy, corporate-obsessed, abstract.
         Linguistic Focus:
-        - Use "actionable" verbs and corporate buzzwords.
+        - Treat human feelings as "bandwidth issues" or "data points."
+        - Use "actionable" verbs and corporate buzzwords (pivot, scale, leverage).
         - Frame simple tasks as "mission-critical objectives".
-        - Frame mistakes as "pivoting opportunities".
-        - Sound visionary and urgent.`,
+        - Sound visionary and urgent, even about mundane things.`,
 
         "The Straight Shooter": `TARGET: THE STRAIGHT SHOOTER (No-Nonsense)
-        Style: Blunt, efficient, radically honest.
+        Style: Blunt, dry, efficient.
         Linguistic Focus:
-        - Strip away all "fluff", politeness markers, and hesitation.
-        - Prioritize the most important info first (TL;DR style).
-        - Use short, declarative sentences.`,
+        - Strip away ALL "fluff", adjectives, and politeness markers.
+        - Use short, chopped, declarative sentences.
+        - Subject-Verb-Object only. 
+        - Remove emotion. Just facts.`,
 
-        "The Counselor": `TARGET: THE COUNSELOR (The Legal Eagle)
-        Style: Precise, objective, airtight.
+        "The Counselor": `TARGET: THE COUNSELOR (Legal/Contractual)
+        Style: Detached, cold, clinical, and airtight.
         Linguistic Focus:
-        - Use formal vocabulary and technical precision.
-        - Use "if/then" conditional structures to define scope.
-        - Replace casual adjectives with specific terms to ensure zero ambiguity.`,
+        - DO NOT be emotional. Remove hyperbole (no "starving", no "love").
+        - Use "The Subject" or "The Undersigned" instead of "I".
+        - Use formal, Latinate vocabulary.
+        - Draft the sentence as if it is a clause in a binding contract or affidavit.`,
 
-        "The Trendsetter": `TARGET: THE TRENDSETTER (Social Media Vlogger)
-        Style: Relatable, expressive, hyper-modern.
+        "The Trendsetter": `TARGET: THE TRENDSETTER (Social Media/Gen Z)
+        Style: Hyper-online, relatable, expressive.
         Linguistic Focus:
-        - Use "voicey" punctuation (exclamation points, capitalization for emphasis).
-        - Use contemporary slang and community-building phrases ("Let's dive in", "Hot take").
-        - Prioritize emotional connection over formal grammar.`
+        - Use "voicey" punctuation (lowercase for aesthetic, or ALL CAPS for yelling).
+        - Use internet slang (no cap, aesthetic, mood, vibe).
+        - Focus on "relatability" and "engagement" over grammar.`
       };
 
       let specificInstruction = "";
@@ -157,7 +159,9 @@ RULES:
         const persona = CUSTOM_PERSONAS[customPrompt];
         
         if (persona) {
-            specificInstruction = persona;
+            specificInstruction = `STRICT MODE: IGNORE standard naturalness rules.
+            ${persona}
+            Make the transformation distinct and exaggerated to match this persona.`;
         } else {
             specificInstruction = `TARGET: CUSTOM
             Instruction: ${customPrompt || "Rewrite appropriately."}`;
@@ -170,14 +174,13 @@ RULES:
       // -----------------------------------------------------------
       // ASSEMBLE PROMPT
       // -----------------------------------------------------------
-      // UPDATED: Removed the instruction to "return unchanged if perfect"
       userMessage = `INPUT TEXT: "${text}"
 
 ${specificInstruction}
 
 CRITICAL: Return ONLY JSON.
 ALWAYS provide a rewritten version, even if the input is already good. Find a better or alternative way to say it.`;
-    } // <--- THIS BRACE WAS MISSING. IT CLOSES THE ELSE BLOCK.
+    } 
 
     // --- WATERFALL EXECUTION ---
     let lastError = null;
