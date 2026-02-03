@@ -277,40 +277,94 @@ const performRestart = () => {
   playSound('paper');
 };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    // 1. Calculate Bounds with Extra Padding (Fixes Clipping)
     const nodesBounds = getNodesBounds(getNodes());
     if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
 
-    const imageWidth = nodesBounds.width + 100;
-    const imageHeight = nodesBounds.height + 100;
-    
+    // Add generous padding (100px) to ensure shadows/badges aren't cut off
+    const padding = 100; 
+    const imageWidth = nodesBounds.width + (padding * 2);
+    const imageHeight = nodesBounds.height + (padding * 2);
+
+    // Calculate the transform to fit everything centered
     const transform = getViewportForBounds(
       nodesBounds,
       imageWidth,
       imageHeight,
-      0.5,
-      2,
-      50
+      0.5, // min zoom
+      2,   // max zoom
+      padding
     );
 
     const viewport = document.querySelector('.react-flow__viewport');
-    
-    if (viewport) {
-      toPng(viewport, {
+    if (!viewport) return;
+
+    try {
+      // 2. Generate the base Flow Image
+      const dataUrl = await toPng(viewport, {
         backgroundColor: '#F9F6C8',
         width: imageWidth,
         height: imageHeight,
         style: {
           width: imageWidth,
           height: imageHeight,
+          // Force the viewport to show all nodes at the correct scale/position
           transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
         },
-      }).then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = 'gridsk·ai-study-map.png';
-        link.href = dataUrl;
-        link.click();
       });
+
+      // 3. Composite the Logo (The "Watermark")
+      const canvas = document.createElement('canvas');
+      canvas.width = imageWidth;
+      canvas.height = imageHeight;
+      const ctx = canvas.getContext('2d');
+
+      // Load the generated Flow image
+      const flowImage = new Image();
+      flowImage.src = dataUrl;
+      await new Promise((resolve) => (flowImage.onload = resolve));
+
+      // Draw Flow
+      ctx.drawImage(flowImage, 0, 0);
+
+      // Load the Logo
+      const logoImage = new Image();
+      logoImage.src = '/logo.png'; // Make sure this path matches your public folder
+      
+      // Attempt to draw logo
+      try {
+        await new Promise((resolve, reject) => {
+          logoImage.onload = resolve;
+          logoImage.onerror = reject;
+        });
+
+        // Logo sizing math (Maintain aspect ratio, max width 150px)
+        const logoTargetWidth = 150;
+        const logoTargetHeight = (logoTargetWidth * logoImage.height) / logoImage.width;
+        
+        // Position: Bottom Right with margin
+        const margin = 40;
+        const logoX = imageWidth - logoTargetWidth - margin;
+        const logoY = imageHeight - logoTargetHeight - margin;
+
+        // Draw with slight transparency for a watermark look
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(logoImage, logoX, logoY, logoTargetWidth, logoTargetHeight);
+        ctx.globalAlpha = 1.0;
+        
+      } catch (err) {
+        console.warn("Logo failed to load for snapshot, skipping.", err);
+      }
+
+      // 4. Trigger Download
+      const link = document.createElement('a');
+      link.download = 'gridsk·ai-snapshot.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+    } catch (err) {
+      console.error("Snapshot failed", err);
     }
   };
 
