@@ -278,44 +278,41 @@ const performRestart = () => {
 };
 
   const handleDownload = async () => {
+    // 1. Get the precise bounding box of ALL nodes (x, y, width, height)
     const nodesBounds = getNodesBounds(getNodes());
     if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
 
-    // 1. Setup Dimensions
-    // We use a smaller padding (50px) to keep the snapshot tighter to the content
+    // 2. Define dimensions with padding
     const padding = 50; 
     const imageWidth = nodesBounds.width + (padding * 2);
     const imageHeight = nodesBounds.height + (padding * 2);
 
-    // 2. Calculate Centering Transform
-    // CRITICAL FIX: We pass '0' as the padding to the calculator, but apply it 
-    // to the imageWidth/Height above. This forces strict centering.
-    const transform = getViewportForBounds(
-      nodesBounds,
-      imageWidth,
-      imageHeight,
-      0.5, // min zoom
-      2,   // max zoom
-      0    // padding for calculation (keep 0 to ensure true center)
-    );
+    // 3. Calculate Manual Transform
+    // We strictly shift the graph so the top-left most point (nodesBounds.x, nodesBounds.y)
+    // sits exactly at (padding, padding) in the new image.
+    // We use scale(1) to keep text sharp and avoid "zoom out" blurring.
+    const transformX = -nodesBounds.x + padding;
+    const transformY = -nodesBounds.y + padding;
+    const zoom = 1;
 
     const viewport = document.querySelector('.react-flow__viewport');
     if (!viewport) return;
 
     try {
-      // 3. Generate Base Image
+      // 4. Generate Base Image
       const dataUrl = await toPng(viewport, {
         backgroundColor: '#F9F6C8',
         width: imageWidth,
         height: imageHeight,
         style: {
-          width: imageWidth.toString(),
-          height: imageHeight.toString(),
-          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
+          width: imageWidth.toString() + 'px',
+          height: imageHeight.toString() + 'px',
+          // CRITICAL: Force the viewport to shift content to the top-left
+          transform: `translate(${transformX}px, ${transformY}px) scale(${zoom})`,
         },
       });
 
-      // 4. Composite Logo
+      // 5. Composite Logo
       const canvas = document.createElement('canvas');
       canvas.width = imageWidth;
       canvas.height = imageHeight;
@@ -338,12 +335,12 @@ const performRestart = () => {
           logoImage.onerror = reject;
         });
 
-        // UPDATED: Smaller Logo Size (80px)
+        // Logo Settings: Small watermark style
         const logoTargetWidth = 80;
         const logoTargetHeight = (logoTargetWidth * logoImage.height) / logoImage.width;
-        
-        // UPDATED: Tighter Margins (20px)
         const margin = 20;
+        
+        // Position: Bottom Right of the FULL image
         const logoX = imageWidth - logoTargetWidth - margin;
         const logoY = imageHeight - logoTargetHeight - margin;
 
@@ -355,9 +352,9 @@ const performRestart = () => {
         console.warn("Logo failed to load for snapshot, skipping.", err);
       }
 
-      // 5. Download
+      // 6. Download
       const link = document.createElement('a');
-      link.download = 'gridsk·ai-map.png';
+      link.download = 'gridsk·ai-snapshot.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
 
