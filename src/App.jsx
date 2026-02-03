@@ -128,10 +128,11 @@ const PaperNode = ({ data, id }) => {
 
   // PRESETS FOR CUSTOM MODE
   const CUSTOM_PRESETS = [
-    "Sarcastic",
-    "Conversational",
-    "Journalistic",
-    "Scientific"
+    "Diplomat",
+    "Disruptor",
+    "Straight Shooter",
+    "Counselor",
+    "Trendsetter"
   ];
 
   return (
@@ -196,12 +197,13 @@ const PaperNode = ({ data, id }) => {
                </div>
                
                {/* PRESET CHIPS */}
-               <div className="flex flex-wrap gap-2">
+               <div className="flex flex-wrap gap-2 mt-2">
                  {CUSTOM_PRESETS.map(preset => (
                     <button 
                       key={preset}
-                      onClick={() => handleUpgrade('custom', `Make it ${preset}`)}
-                      className="px-2 py-0.5 bg-gray-100 border border-gray-300 text-[9px] font-mono hover:bg-ink hover:text-white hover:border-ink transition-colors"
+                      onClick={() => handleUpgrade('custom', preset)}
+                      // Changed: added whitespace-nowrap and slightly larger padding
+                      className="px-2 py-1 bg-gray-100 border border-gray-300 text-[9px] font-mono whitespace-nowrap hover:bg-ink hover:text-white hover:border-ink transition-colors"
                     >
                       {preset}
                     </button>
