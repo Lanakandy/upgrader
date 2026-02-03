@@ -130,7 +130,9 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
   ];
 
   return (
-    <div className="relative group w-[480px] node-enter-anim"> 
+    <div className="relative group w-[42
+
+0px] node-enter-anim"> 
       
       <div className="relative bg-white border border-ink p-6 z-20 font-serif
                       shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)] 
@@ -321,8 +323,8 @@ const performRestart = () => {
     // SPACING CONFIG
     const VERTICAL_GAP = 450;   
     const HORIZONTAL_GAP = 900; 
-    const NODE_WIDTH = 500;     
-    const NODE_HEIGHT = 250;    
+    const NODE_WIDTH = 400;     
+    const NODE_HEIGHT = 300;    
 
     // RANDOM "DRIFT" (This creates the organic feel)
     // We add a random number between -100 and 100 to prevent straight lines
