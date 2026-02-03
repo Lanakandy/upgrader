@@ -103,6 +103,45 @@ RULES:
       // -----------------------------------------------------------
       // MODE SELECTION
       // -----------------------------------------------------------
+      const CUSTOM_PERSONAS = {
+        "The Diplomat": `TARGET: THE DIPLOMAT (The Politician)
+        Style: Sophisticated, evasive, and incredibly smooth.
+        Linguistic Focus: 
+        - Swap "I" for "we".
+        - Use passive voice to deflect direct blame.
+        - Master the art of "hedging" (use words like 'perhaps', 'potentially', 'under certain circumstances').
+        - Never say a direct "no"; dilute the negative.`,
+
+        "The Disruptor": `TARGET: THE DISRUPTOR (Silicon Valley Entrepreneur)
+        Style: High-energy, forward-thinking, saturated with tech-speak.
+        Linguistic Focus:
+        - Use "actionable" verbs and corporate buzzwords.
+        - Frame simple tasks as "mission-critical objectives".
+        - Frame mistakes as "pivoting opportunities".
+        - Sound visionary and urgent.`,
+
+        "The Straight Shooter": `TARGET: THE STRAIGHT SHOOTER (No-Nonsense)
+        Style: Blunt, efficient, radically honest.
+        Linguistic Focus:
+        - Strip away all "fluff", politeness markers, and hesitation.
+        - Prioritize the most important info first (TL;DR style).
+        - Use short, declarative sentences.`,
+
+        "The Counselor": `TARGET: THE COUNSELOR (The Legal Eagle)
+        Style: Precise, objective, airtight.
+        Linguistic Focus:
+        - Use formal vocabulary and technical precision.
+        - Use "if/then" conditional structures to define scope.
+        - Replace casual adjectives with specific terms to ensure zero ambiguity.`,
+
+        "The Trendsetter": `TARGET: THE TRENDSETTER (Social Media Vlogger)
+        Style: Relatable, expressive, hyper-modern.
+        Linguistic Focus:
+        - Use "voicey" punctuation (exclamation points, capitalization for emphasis).
+        - Use contemporary slang and community-building phrases ("Let's dive in", "Hot take").
+        - Prioritize emotional connection over formal grammar.`
+      };
+
       let specificInstruction = "";
 
       const targetContext = PROMPT_TREE[contextMode] || PROMPT_TREE['speaking'];
@@ -112,9 +151,18 @@ RULES:
         specificInstruction = `TARGET: SIMPLIFY (The "Straight Talker")
         Goal: Strip the sentence back to how a proficient speaker would put it simply. Make it clearer and shorter.
         Context: ${contextMode === 'writing' ? 'Plain English for reading' : 'Casual, direct speech'}.`;
+        
       } else if (mode === 'custom') {
-        specificInstruction = `TARGET: CUSTOM
-        Instruction: ${customPrompt || "Rewrite appropriately."}`;
+        // CHECK IF THE PROMPT MATCHES A PRESET, OTHERWISE USE RAW TEXT
+        const persona = CUSTOM_PERSONAS[customPrompt];
+        
+        if (persona) {
+            specificInstruction = persona;
+        } else {
+            specificInstruction = `TARGET: CUSTOM
+            Instruction: ${customPrompt || "Rewrite appropriately."}`;
+        }
+
       } else {
         specificInstruction = targetPrompt;
       }
