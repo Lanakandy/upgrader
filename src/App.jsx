@@ -278,88 +278,91 @@ const performRestart = () => {
 };
 
   const handleDownload = async () => {
-    // 1. Get the precise bounding box of ALL nodes (x, y, width, height)
+    // 1. Get Bounds
     const nodesBounds = getNodesBounds(getNodes());
     if (nodesBounds.width === 0 || nodesBounds.height === 0) return;
 
-    // 2. Define dimensions with padding
-    const padding = 50; 
-    const imageWidth = nodesBounds.width + (padding * 2);
-    const imageHeight = nodesBounds.height + (padding * 2);
+    // 2. Define Image Dimensions (Content + Padding)
+    const imageWidth = nodesBounds.width + 100;
+    const imageHeight = nodesBounds.height + 100;
 
-    // 3. Calculate Manual Transform
-    // We strictly shift the graph so the top-left most point (nodesBounds.x, nodesBounds.y)
-    // sits exactly at (padding, padding) in the new image.
-    // We use scale(1) to keep text sharp and avoid "zoom out" blurring.
-    const transformX = -nodesBounds.x + padding;
-    const transformY = -nodesBounds.y + padding;
-    const zoom = 1;
+    // 3. Calculate the Transform (Center content in the new image)
+    const transform = getViewportForBounds(
+      nodesBounds,
+      imageWidth,
+      imageHeight,
+      0.5, // Min Zoom
+      2,   // Max Zoom
+      50   // Padding
+    );
 
     const viewport = document.querySelector('.react-flow__viewport');
     if (!viewport) return;
 
     try {
-      // 4. Generate Base Image
+      // 4. Generate the React Flow PNG
       const dataUrl = await toPng(viewport, {
         backgroundColor: '#F9F6C8',
         width: imageWidth,
         height: imageHeight,
         style: {
-          width: imageWidth.toString() + 'px',
-          height: imageHeight.toString() + 'px',
-          // CRITICAL: Force the viewport to shift content to the top-left
-          transform: `translate(${transformX}px, ${transformY}px) scale(${zoom})`,
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
         },
       });
 
-      // 5. Composite Logo
+      // 5. Setup Canvas for Compositing
       const canvas = document.createElement('canvas');
       canvas.width = imageWidth;
       canvas.height = imageHeight;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-      const flowImage = new Image();
-      flowImage.src = dataUrl;
-      await new Promise((resolve) => (flowImage.onload = resolve));
+      // 6. Draw the Map
+      const baseImage = new Image();
+      baseImage.src = dataUrl;
+      await new Promise((resolve) => (baseImage.onload = resolve));
+      ctx.drawImage(baseImage, 0, 0);
 
-      // Draw Flow
-      ctx.drawImage(flowImage, 0, 0);
-
-      // Load Logo
-      const logoImage = new Image();
-      logoImage.src = '/logo.png'; 
-      
+      // 7. Draw the Logo (Safely)
       try {
+        const logoImage = new Image();
+        logoImage.src = '/logo.png';
+        
+        // Wait for logo, but don't crash if it fails
         await new Promise((resolve, reject) => {
           logoImage.onload = resolve;
-          logoImage.onerror = reject;
+          logoImage.onerror = () => {
+            console.warn("Logo failed to load, skipping."); 
+            resolve(); // Resolve anyway to continue download
+          }; 
         });
 
-        // Logo Settings: Small watermark style
-        const logoTargetWidth = 80;
-        const logoTargetHeight = (logoTargetWidth * logoImage.height) / logoImage.width;
-        const margin = 20;
-        
-        // Position: Bottom Right of the FULL image
-        const logoX = imageWidth - logoTargetWidth - margin;
-        const logoY = imageHeight - logoTargetHeight - margin;
+        // Only draw if naturalWidth exists (loaded successfully)
+        if (logoImage.naturalWidth > 0) {
+            const logoTargetWidth = 80;
+            const logoTargetHeight = (logoTargetWidth * logoImage.height) / logoImage.width;
+            const margin = 20;
+            const logoX = imageWidth - logoTargetWidth - margin;
+            const logoY = imageHeight - logoTargetHeight - margin;
 
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(logoImage, logoX, logoY, logoTargetWidth, logoTargetHeight);
-        ctx.globalAlpha = 1.0;
-        
-      } catch (err) {
-        console.warn("Logo failed to load for snapshot, skipping.", err);
+            ctx.globalAlpha = 0.9;
+            ctx.drawImage(logoImage, logoX, logoY, logoTargetWidth, logoTargetHeight);
+            ctx.globalAlpha = 1.0;
+        }
+      } catch (logoErr) {
+        console.warn("Logo processing issue:", logoErr);
       }
 
-      // 6. Download
+      // 8. Trigger Download
       const link = document.createElement('a');
-      link.download = 'gridsk·ai-snapshot.png';
+      link.download = 'gridsk·ai-study-map.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
 
     } catch (err) {
-      console.error("Snapshot failed", err);
+      console.error('Snapshot failed', err);
     }
   };
 
