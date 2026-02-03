@@ -491,7 +491,7 @@ const performRestart = () => {
   };
 
   return (
-    <div className="w-screen h-screen font-serif text-ink relative">
+    <div className="w-screen h-[100dvh] font-serif text-ink relative">
       
       {/* HEADER */}
       <div className="absolute top-0 left-0 w-full p-2 md:p-4 z-50 flex justify-between items-start pointer-events-none">
@@ -523,7 +523,7 @@ const performRestart = () => {
       </div>
 
       {/* LOGO (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80 hidden md:block">
+      <div className="absolute bottom-16 right-4 md:bottom-4 md:right-4 z-50 pointer-events-none mix-blend-multiply opacity-80 scale-75 md:scale-100 origin-bottom-right">
         <img src="/logo.png" alt="Gridscape Logo" className="h-16 w-auto object-contain" />
       </div>
 
@@ -532,7 +532,7 @@ const performRestart = () => {
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm p-4">
           {/* RESPONSIVE FIX: w-[95%] on mobile */}
           <div className="bg-white border border-ink p-4 md:p-8 shadow-hard w-[95%] md:max-w-lg">
-            <h2 className="text-2xl md:text-3xl font-serif mb-6 tracking-tight">Let's start from here</h2>
+            <h2 className="text-2xl md:text-3xl font-serif mb-6 tracking-tight">Enter your sentence</h2>
             <div className="relative">
               
               {/* CONTEXT TOGGLE */}
@@ -604,7 +604,7 @@ const performRestart = () => {
         className="bg-grid-bg"
       >
         <Background color="#d1cfaa" gap={24} size={1.5} />
-        <Controls className="!bg-white !border !border-ink !shadow-hard !text-ink !rounded-none bottom-10 left-2 md:bottom-4 md:left-4" />
+        <Controls className="!bg-white !border !border-ink !shadow-hard !text-ink !rounded-none bottom-20 left-2 md:bottom-4 md:left-4" />
       </ReactFlow>
     </div>
   );
