@@ -35,12 +35,12 @@ export default async (req, context) => {
     // 2. REWRITE/UPGRADE MODE
     // -------------------------------------------------------------
     else {
-      systemPrompt = `You are an expert Applied Linguist specializing in Second Language Acquisition.
+      systemPrompt = `You are an expert Applied Linguist specializing in Second Language Acquisition and language teaching.
 
 MISSION: Rewrite the user's text to sound idiomatic, natural, and stylistically precise.
 RULES:
 1. Preserve core factual meaning.
-2. Change structure/phrasing to match natural patterns (Collocations/Idioms).
+2. Change structure/phrasing to match native proficiency (C1/C2 grammar and vocabulary) and natural patterns (Collocations/Idioms).
 3. EXPLANATION STYLE: Focus on specific linguistic improvements. Do NOT refer to "native speakers." Use "natural," "standard," or "proficient" instead.
 4. OUTPUT FORMAT: valid, raw JSON only. No markdown.
 {
