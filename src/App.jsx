@@ -78,15 +78,20 @@ const PaperNode = ({ data, id }) => {
   const handleWordClick = async (e, word) => {
     playSound('click');
     e.stopPropagation();
+    
+    // Adjust definition popup position for mobile
+    const isMobile = window.innerWidth < 768;
+    const popupY = isMobile ? e.nativeEvent.offsetY + 50 : e.nativeEvent.offsetY;
+
     setDefinition({ 
       word, 
       text: "Analyzing...", 
       transcription: "...", 
       x: e.nativeEvent.offsetX, 
-      y: e.nativeEvent.offsetY 
+      y: popupY 
     });
 
-const result = await apiCall({ text: word, context: data.text, task: 'define' });
+    const result = await apiCall({ text: word, context: data.text, task: 'define' });
     
     if (result) {
       setDefinition(prev => ({ 
@@ -123,18 +128,17 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
 
   // PRESETS FOR CUSTOM MODE
   const CUSTOM_PRESETS = [
-    "Formal",
+    "Sarcastic",
     "Conversational",
     "Journalistic",
     "Scientific"
   ];
 
   return (
-    <div className="relative group w-[42
-
-0px] node-enter-anim"> 
+    // RESPONSIVE FIX: w-[85vw] on mobile, w-[480px] on desktop
+    <div className="relative group w-[85vw] md:w-[480px] node-enter-anim"> 
       
-      <div className="relative bg-white border border-ink p-6 z-20 font-serif
+      <div className="relative bg-white border border-ink p-4 md:p-6 z-20 font-serif
                       shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)] 
                       group-hover:shadow-[5px_5px_0px_0px_rgba(26,26,26,1)]
                       group-hover:-translate-y-0.5 group-hover:-translate-x-0.5
@@ -166,7 +170,8 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
         )}
         {definition && <div className="fixed inset-0 z-40" onClick={() => setDefinition(null)}></div>}
 
-        <div className="mb-4 text-xl leading-relaxed text-ink pr-4 selection:bg-yellow-200">
+        {/* RESPONSIVE FIX: Text size lg on mobile, xl on desktop */}
+        <div className="mb-4 text-lg md:text-xl leading-relaxed text-ink pr-4 selection:bg-yellow-200">
           {renderTextWithDiff()}
         </div>
         
@@ -225,7 +230,7 @@ const result = await apiCall({ text: word, context: data.text, task: 'define' })
                       </button>
                     ))}
                  </div>
-               </div> 
+               </div>
 
                {/* ROW 2: Ground & Custom */}
                <div className="flex gap-2">
@@ -320,16 +325,19 @@ const performRestart = () => {
     let sourceHandleId = 'top-src'; 
     let targetHandleId = 'bottom-tgt';    
     
-    // SPACING CONFIG
-    const VERTICAL_GAP = 450;   
-    const HORIZONTAL_GAP = 900; 
-    const NODE_WIDTH = 400;     
-    const NODE_HEIGHT = 300;    
+    // RESPONSIVE FIX: Check window width for spacing logic
+    const isMobile = window.innerWidth < 768;
 
-    // RANDOM "DRIFT" (This creates the organic feel)
-    // We add a random number between -100 and 100 to prevent straight lines
-    const driftX = (Math.random() * 200) - 100; 
-    const driftY = (Math.random() * 100) - 50;
+    // SPACING CONFIG (Dynamic)
+    const VERTICAL_GAP = isMobile ? 350 : 450;   
+    const HORIZONTAL_GAP = isMobile ? 400 : 900; 
+    const NODE_WIDTH = isMobile ? 340 : 500; // Matches approx visual width
+    const NODE_HEIGHT = 250;    
+
+    // RANDOM "DRIFT" (Reduced on mobile)
+    const driftRange = isMobile ? 40 : 200;
+    const driftX = (Math.random() * driftRange) - (driftRange/2); 
+    const driftY = (Math.random() * (driftRange/2)) - (driftRange/4);
 
     let dx = 0; 
     let dy = 0;
@@ -338,23 +346,22 @@ const performRestart = () => {
     switch (mode) {
       case 'sophisticate': // UP + DRIFT
         dy = -VERTICAL_GAP; 
-        dx = driftX; // Add the horizontal wobble
+        dx = driftX; 
         sourceHandleId = 'top-src'; targetHandleId = 'bottom-tgt'; 
         directionType = 'vertical';
         break;
         
       case 'simplify': // DOWN + DRIFT
         dy = VERTICAL_GAP;
-        dx = driftX; // Add the horizontal wobble
+        dx = driftX; 
         sourceHandleId = 'bottom'; targetHandleId = 'top';
         directionType = 'vertical';
         break;
         
-      // CUSTOM / EXPAND -> MOVES RIGHT
       case 'emotional': 
       case 'custom': 
         dx = HORIZONTAL_GAP; 
-        dy = driftY; // Add slight vertical wobble
+        dy = driftY; 
         sourceHandleId = 'right'; targetHandleId = 'left';
         directionType = 'horizontal';
         break;
@@ -385,11 +392,9 @@ const performRestart = () => {
         if (overlap) {
           shiftCount++;
           if (directionType === 'vertical') {
-             // If vertical movement blocked, shift sideways significantly
              const sign = shiftCount % 2 === 0 ? -1 : 1;
              candidateX += (NODE_WIDTH * sign * Math.ceil(shiftCount/2));
           } else {
-             // If horizontal movement blocked, shift down
              candidateY += NODE_HEIGHT;
           }
         }
@@ -401,7 +406,8 @@ const performRestart = () => {
         id: newNodeId,
         type: 'paper',
         position: calculatedPos,
-        width: 480,
+        // Remove hardcoded width here, rely on CSS class, or update dynamically
+        width: isMobile ? 320 : 480, 
         height: 200,
         data: { 
           text: result.text, 
@@ -431,14 +437,14 @@ const performRestart = () => {
     fontFamily: 'JetBrains Mono', 
     fontSize: 10, 
     fontWeight: 700,
-    width: 200, // Explicitly tell React Flow the intended width
+    width: 200, 
   },
   labelBgStyle: { 
     fill: '#F9F6C8', 
     stroke: '#1a1a1a', 
     strokeWidth: 1,
   },
-  labelBgPadding: [8, 6], // Increased padding for better readability
+  labelBgPadding: [8, 6], 
   labelBgBorderRadius: 0,
   markerEnd: { type: MarkerType.ArrowClosed, color: '#1a1a1a', width: 20, height: 20 },
 };
@@ -446,13 +452,15 @@ const performRestart = () => {
       return [...currentEdges, newEdge];
     });
 
-    // Zoom to new node (Center logic remains same)
-    // Zoom logic adjusted for drift
+    // Zoom logic adjusted for mobile center
     const approxX = (dx) + (getNodes().find(n => n.id === parentId)?.position.x || 0);
     const approxY = (dy) + (getNodes().find(n => n.id === parentId)?.position.y || 0);
+    
+    // Center point depends on node width (approx half width)
+    const centerOffset = isMobile ? 160 : 240;
 
     setTimeout(() => {
-       setCenter(approxX + 240, approxY + 100, { zoom: 1.3, duration: 1200 });
+       setCenter(approxX + centerOffset, approxY + 100, { zoom: isMobile ? 1.0 : 1.3, duration: 1200 });
     }, 100);
 
   }, [setCenter, getNodes]);
@@ -461,11 +469,14 @@ const performRestart = () => {
     if(!inputText) return;
     setHasStarted(true);
     
+    const isMobile = window.innerWidth < 768;
+    const nodeWidth = isMobile ? 320 : 480;
+    const centerOffset = isMobile ? 160 : 240;
   
   setNodes([{
       id: '1', type: 'paper',
       position: { x: 0, y: 0 },
-      width: 480, height: 200,
+      width: nodeWidth, height: 200,
       data: { 
           text: inputText, 
           onUpgrade: handleUpgradeRequest, 
@@ -474,10 +485,8 @@ const performRestart = () => {
       },
     }]);
   
-  // Center on the node at exactly zoom 1.0
-  // Added a tiny timeout to ensure React Flow has registered the node first
   setTimeout(() => {
-    setCenter(240, 100, { zoom: 1.2, duration: 800 });
+    setCenter(centerOffset, 100, { zoom: isMobile ? 1.0 : 1.2, duration: 800 });
     }, 50);
   };
 
@@ -485,9 +494,10 @@ const performRestart = () => {
     <div className="w-screen h-screen font-serif text-ink relative">
       
       {/* HEADER */}
-      <div className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-start pointer-events-none">
+      <div className="absolute top-0 left-0 w-full p-2 md:p-4 z-50 flex justify-between items-start pointer-events-none">
         <div className="flex flex-col gap-1 items-start">
-          <h1 className="text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
+          {/* RESPONSIVE FIX: Smaller text on mobile */}
+          <h1 className="text-2xl md:text-4xl font-serif tracking-tight pointer-events-auto">gridsk·ai</h1>
           <div className="flex gap-2 pointer-events-auto">
             <p className="font-mono text-xs bg-white border border-ink inline-block px-2 py-1">
               {nodes.length} NODES CREATED
@@ -497,7 +507,7 @@ const performRestart = () => {
                 onClick={triggerRestart}
                 className="bg-white border border-ink px-2 py-1 font-mono text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-1 pointer-events-auto"
               >
-                <RotateCcw size={12} /> NEW GRID
+                <RotateCcw size={12} /> <span className="hidden md:inline">NEW GRID</span><span className="md:hidden">NEW</span>
               </button>
             )}
           </div>
@@ -513,28 +523,29 @@ const performRestart = () => {
       </div>
 
       {/* LOGO (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80">
+      <div className="absolute bottom-4 right-4 z-50 pointer-events-none mix-blend-multiply opacity-80 hidden md:block">
         <img src="/logo.png" alt="Gridscape Logo" className="h-16 w-auto object-contain" />
       </div>
 
       {/* START SCREEN (Only shows if sessions hasn't started) */}
       {!hasStarted && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm">
-          <div className="bg-white border border-ink p-8 shadow-hard max-w-lg w-full">
-            <h2 className="text-3xl font-serif mb-6 tracking-tight">Put your sentence here</h2>
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-grid-bg/90 backdrop-blur-sm p-4">
+          {/* RESPONSIVE FIX: w-[95%] on mobile */}
+          <div className="bg-white border border-ink p-4 md:p-8 shadow-hard w-[95%] md:max-w-lg">
+            <h2 className="text-2xl md:text-3xl font-serif mb-6 tracking-tight">Let's start from here</h2>
             <div className="relative">
               
               {/* CONTEXT TOGGLE */}
               <div className="flex gap-0 mb-[-1px] relative z-10 ml-1">
                 <button 
                   onClick={() => setStartMode('speaking')}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'speaking' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
+                  className={`px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'speaking' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
                 >
                   SPEAKING
                 </button>
                 <button 
                   onClick={() => setStartMode('writing')}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'writing' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
+                  className={`px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'writing' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
                 >
                   WRITING
                 </button>
@@ -552,7 +563,7 @@ const performRestart = () => {
               <div className={`absolute bottom-4 right-4 text-xs font-mono px-2 py-1 bg-white border border-ink ${
                 inputText.trim().split(/\s+/).filter(w => w.length > 0).length > 40 ? 'text-red-600 border-red-600 bg-red-50' : 'text-gray-400'
               }`}>
-                {inputText.trim().split(/\s+/).filter(w => w.length > 0).length} / 40 WORDS
+                {inputText.trim().split(/\s+/).filter(w => w.length > 0).length} / 40
               </div>
             </div>
 
@@ -571,12 +582,12 @@ const performRestart = () => {
         </div>
       )}
 
-      {/* THEMED RESTART CONFIRMATION (Placed outside Start Screen so it can show over the grid) */}
+      {/* THEMED RESTART CONFIRMATION */}
       {showRestartConfirm && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-grid-bg/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border-2 border-ink p-8 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] max-w-sm w-full node-enter-anim">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-grid-bg/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white border-2 border-ink p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] w-full max-w-sm node-enter-anim">
             <h2 className="text-2xl font-serif mb-2 tracking-tight">Clear the grid?</h2>
-            <p className="font-serif text-gray-600 mb-6 italic">This will permanently remove all your progress and nodes.</p>
+            <p className="font-serif text-gray-600 mb-6 italic">This will permanently remove all your progress.</p>
             <div className="flex gap-3">
               <button onClick={performRestart} className="flex-1 bg-ink text-white py-3 font-mono text-xs tracking-widest hover:bg-red-600 transition-colors uppercase font-bold">Yes, Wipe It</button>
               <button onClick={() => setShowRestartConfirm(false)} className="flex-1 bg-white border border-ink py-3 font-mono text-xs tracking-widest hover:bg-gray-100 transition-colors uppercase font-bold">Nevermind</button>
@@ -593,7 +604,7 @@ const performRestart = () => {
         className="bg-grid-bg"
       >
         <Background color="#d1cfaa" gap={24} size={1.5} />
-        <Controls className="!bg-white !border !border-ink !shadow-hard !text-ink !rounded-none" />
+        <Controls className="!bg-white !border !border-ink !shadow-hard !text-ink !rounded-none bottom-10 left-2 md:bottom-4 md:left-4" />
       </ReactFlow>
     </div>
   );
