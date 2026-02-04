@@ -53,51 +53,26 @@ RULES:
       // -----------------------------------------------------------
       
       const PROMPT_TREE = {
-        speaking: {
-          1: `TARGET: LEVEL 1 — PROFICIENCY & VARIATION
-          Goal: Rewrite the input to reflect C1/C2-level English.
-          Core Instruction:
-          - If simple/intermediate: Upgrade grammar and vocabulary to a native standard.
-          - If ALREADY advanced: You MUST provide a distinct, high-quality alternative phrasing. Do not return the same sentence. Change the specific vocabulary or sentence structure while keeping the same meaning.
-          Focus:
-          - Advanced, idiomatic vocabulary.
-          - Natural contractions and reductions.
-          - Lateral improvements: If the input is "famished", try "starving" or "running on fumes".`,
+        1: `TARGET: LEVEL 1 — PROFICIENCY & VARIATION
+        Goal: Rewrite the input to reflect C1/C2-level English.
+        Core Instruction:
+        - If simple/intermediate: Upgrade grammar and vocabulary to a native standard.
+        - If ALREADY advanced: You MUST provide a distinct, high-quality alternative phrasing. Do not return the same sentence. Change the specific vocabulary or sentence structure while keeping the same meaning.
+        Focus:
+        - Advanced, idiomatic vocabulary.
+        - Natural contractions and reductions.
+        - Lateral improvements: If the input is "famished", try "starving" or "running on fumes".`,
 
-          2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (Expansion)
-          Goal: Evolve the sentence by adding nuance, attitude, color, or situational detail. 
-          Core Instruction:
-          - Restructure and slightly expand the sentence to add emotion or context.
-          - Build directly on the original meaning—do not invent unrelated backstory.
-          - Use spoken rhythm (pauses, emphasis) and "flavor" words.
-          Focus:
-          - Expressiveness: Use hyperbole or vivid imagery where appropriate.
-          - Grounding: Add specific details that make the speaker sound present in the moment.
-          - Conversational Flow: Use discourse markers naturally.`
-        },
-
-        writing: {
-          1: `TARGET: LEVEL 1 — PROFICIENCY & VARIATION
-          Goal: Rewrite the input to reflect C1/C2-level English.
-          Core Instruction:
-          - If simple/intermediate: Upgrade grammar and vocabulary.
-          - If ALREADY advanced: You MUST provide a stylistic alternative. Change the syntax or lexical choice to offer a different "flavor" of high-level writing.
-          Focus:
-          - Precise vocabulary and written collocations.
-          - Improve sentence structure.
-          - Fix literal translations.`,
-
-          2: `TARGET: LEVEL 2 — EXPRESSIVE WRITTEN ENGLISH (Expansion)
-          Goal: Expand the sentence slightly to add nuance, emphasis, or clarifying detail.
-          Core Instruction:
-          - Use measured structural elaboration (modifiers, subordinate clauses, appositives).
-          - Introduce implication or depth that a skilled writer would include.
-          - Keep additions relevant and proportional (don't over-write).
-          Focus:
-          - Sophisticated syntax (using subordination to show relationships between ideas).
-          - Precision: Replace general verbs with specific, evocative ones.
-          - Polished tone.`
-        }
+        2: `TARGET: LEVEL 2 — SPOKEN EXPRESSIVE (Expansion)
+        Goal: Evolve the sentence by adding nuance, attitude, color, or situational detail. 
+        Core Instruction:
+        - Restructure and slightly expand the sentence to add emotion or context.
+        - Build directly on the original meaning—do not invent unrelated backstory.
+        - Use spoken rhythm (pauses, emphasis) and "flavor" words.
+        Focus:
+        - Expressiveness: Use hyperbole or vivid imagery where appropriate.
+        - Grounding: Add specific details that make the speaker sound present in the moment.
+        - Conversational Flow: Use discourse markers naturally.`
       };
 
       // -----------------------------------------------------------
@@ -146,16 +121,14 @@ RULES:
 
       let specificInstruction = "";
 
-      const targetContext = PROMPT_TREE[contextMode] || PROMPT_TREE['speaking'];
-      const targetPrompt = targetContext[level] || targetContext[1];
+      const targetPrompt = PROMPT_TREE[level] || PROMPT_TREE[1];
 
       if (mode === 'simplify') {
         specificInstruction = `TARGET: SIMPLIFY (The "Straight Talker")
         Goal: Strip the sentence back to how a proficient speaker would put it simply. Make it clearer and shorter.
-        Context: ${contextMode === 'writing' ? 'Plain English for reading' : 'Casual, direct speech'}.`;
+        Context: Casual, direct speech.`;
         
       } else if (mode === 'custom') {
-        // CHECK IF THE PROMPT MATCHES A PRESET, OTHERWISE USE RAW TEXT
         const persona = CUSTOM_PERSONAS[customPrompt];
         
         if (persona) {
