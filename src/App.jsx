@@ -535,7 +535,7 @@ const performRestart = () => {
           text: inputText, 
           onUpgrade: handleUpgradeRequest, 
           previousText: null,
-          contextMode: startMode
+          contextMode: 'speaking'
       },
     }]);
   
@@ -589,26 +589,10 @@ const performRestart = () => {
             <h2 className="text-2xl md:text-3xl font-serif mb-6 tracking-tight">Enter your sentence</h2>
             <div className="relative">
               
-              {/* CONTEXT TOGGLE */}
-              <div className="flex gap-0 mb-[-1px] relative z-10 ml-1">
-                <button 
-                  onClick={() => setStartMode('speaking')}
-                  className={`px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'speaking' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
-                >
-                  SPEAKING
-                </button>
-                <button 
-                  onClick={() => setStartMode('writing')}
-                  className={`px-4 py-2 text-xs font-mono border-t border-l border-r border-ink transition-all ${startMode === 'writing' ? 'bg-white text-ink pb-3' : 'bg-gray-200 text-gray-500 border-b'}`}
-                >
-                  WRITING
-                </button>
-              </div>
-
               {/* TEXT AREA */}
               <textarea
-                className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-white focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic rounded-tl-none"
-                placeholder={startMode === 'speaking' ? "What do you want to say?" : "What do you want to write?"}
+                className="w-full h-32 border border-ink p-4 font-serif text-lg focus:outline-none resize-none mb-2 bg-white focus:bg-white transition-colors placeholder:text-gray-400 placeholder:italic"
+                placeholder="What do you want to say?" 
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
               />
