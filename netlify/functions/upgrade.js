@@ -79,7 +79,7 @@ RULES:
       // CUSTOM PERSONA DEFINITIONS
       // -----------------------------------------------------------
       const CUSTOM_PERSONAS = {
-        "The Diplomat": `TARGET: THE DIPLOMAT (The Politician)
+        "Diplomat": `TARGET: THE DIPLOMAT (The Politician)
         Style: Sophisticated, evasive, and excessively polite.
         Linguistic Focus: 
         - Swap "I" for "we" to dilute responsibility.
@@ -87,7 +87,7 @@ RULES:
         - Master "hedging" (use words like 'perhaps', 'it would appear', 'potentially').
         - Never state a direct need; frame it as a "collective priority" or "circumstantial requirement."`,
 
-        "The Disruptor": `TARGET: THE DISRUPTOR (Silicon Valley Tech)
+        "Disruptor": `TARGET: THE DISRUPTOR (Silicon Valley Tech)
         Style: High-energy, corporate-obsessed, abstract.
         Linguistic Focus:
         - Treat human feelings as "bandwidth issues" or "data points."
@@ -95,7 +95,7 @@ RULES:
         - Frame simple tasks as "mission-critical objectives".
         - Sound visionary and urgent, even about mundane things.`,
 
-        "The Straight Shooter": `TARGET: THE STRAIGHT SHOOTER (No-Nonsense)
+        "IT Guy": `TARGET: THE STRAIGHT SHOOTER (No-Nonsense)
         Style: Blunt, dry, efficient.
         Linguistic Focus:
         - Strip away ALL "fluff", adjectives, and politeness markers.
@@ -103,7 +103,7 @@ RULES:
         - Subject-Verb-Object only. 
         - Remove emotion. Just facts.`,
 
-        "The Counselor": `TARGET: THE COUNSELOR (Legal/Contractual)
+        "Counselor": `TARGET: THE COUNSELOR (Legal/Contractual)
         Style: Detached, cold, clinical, and airtight.
         Linguistic Focus:
         - DO NOT be emotional. Remove hyperbole (no "starving", no "love").
@@ -111,7 +111,7 @@ RULES:
         - Use formal, Latinate vocabulary.
         - Draft the sentence as if it is a clause in a binding contract or affidavit.`,
 
-        "The Trendsetter": `TARGET: THE TRENDSETTER (Social Media/Gen Z)
+        "Trendsetter": `TARGET: THE TRENDSETTER (Social Media/Gen Z)
         Style: Hyper-online, relatable, expressive.
         Linguistic Focus:
         - Use "voicey" punctuation (lowercase for aesthetic, or ALL CAPS for yelling).
