@@ -216,7 +216,7 @@ const PaperNode = ({ data, id }) => {
                {/* ROW 1: The Elevation Control (Elevate + Dial) */}
                <div className="flex items-center gap-2">
                  <button onClick={() => handleUpgrade('sophisticate')} className="flex-1 py-1 bg-transparent border border-ink text-[10px] tracking-widest font-mono font-bold uppercase hover:bg-ink hover:text-white transition-all active:translate-y-0.5">
-                   ↑ Elevate
+                   ↑ Upgrade
                  </button>
                  
                  {/* THE LEVEL DIAL */}
