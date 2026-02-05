@@ -130,7 +130,7 @@ const PaperNode = ({ data, id }) => {
   const CUSTOM_PRESETS = [
     "Diplomat",
     "Disruptor",
-    "Straight Shooter",
+    "IT Guy",
     "Counselor",
     "Trendsetter"
   ];
