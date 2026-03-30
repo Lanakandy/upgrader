@@ -6,6 +6,7 @@ export default async (req, context) => {
 
   // DeepSeek R1 and Trinity are great, but ensure fallback to 4o-mini for speed/reliability
   const MODEL_CASCADE = [
+    "nvidia/nemotron-3-super-120b-a12b:free",
     "meta-llama/llama-3.1-8b-instruct",
     ];
 
