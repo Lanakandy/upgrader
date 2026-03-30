@@ -6,10 +6,9 @@ export default async (req, context) => {
 
   // DeepSeek R1 and Trinity are great, but ensure fallback to 4o-mini for speed/reliability
   const MODEL_CASCADE = [
-    "arcee-ai/trinity-large-preview:free",
-    "openai/gpt-4o-mini",  
-    "tngtech/deepseek-r1t2-chimera:free",
-  ];
+    "arcee-ai/trinity-mini:free",
+    "liquid/lfm-2.2-6b",
+    ];
 
   try {
     // 1. Parse body ONCE. 
