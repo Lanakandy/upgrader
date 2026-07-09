@@ -7,8 +7,8 @@ export default async (req, context) => {
   // DeepSeek R1 and Trinity are great, but ensure fallback to 4o-mini for speed/reliability
   const MODEL_CASCADE = [
     "liquid/lfm-2.5-1.2b-instruct:free",
-    "mistralai/mistral-nemo",
     "meta-llama/llama-3.1-8b-instruct",
+    "mistralai/mistral-nemo",
     ];
 
   try {
